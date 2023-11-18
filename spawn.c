@@ -21,9 +21,9 @@ int spawn(const char * program, char ** arg_list) {
 }
 
 int main() {
-  char * arg_list[] = { "knsole", "-e", "./first", NULL };
+  char * arg_list[] = { "knsole", "-e", "./server", NULL };
   spawn("konsole", arg_list);
-  char * arg_list1[] = {"konsole", "-e", "./second", NULL};
+  char * arg_list1[] = {"konsole", "-e", "./drone", NULL};
   spawn ("konsole", arg_list1);
   printf ("Main program exiting...\n");
   return 0;
