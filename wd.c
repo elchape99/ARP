@@ -31,6 +31,9 @@ int write_logfile (char *str){
 
 }
 
+/*  when signal arrive counter --
+    when wd send kill counter ++ */
+int counter = 0;
 
 void sigusr2Handler(int signum, siginfo_t *info, void *context) {
     if(signum == SIGUSR2){
@@ -47,6 +50,7 @@ void sigusr2Handler(int signum, siginfo_t *info, void *context) {
             time(&current_time);  
             fprintf(logfile, "%s => watchdog receive signal from %d\n", ctime(&current_time), info->si_pid);
             fclose(logfile);
+            counter --;
         }
     }    
 }
@@ -95,7 +99,7 @@ int main(int argc, char *argv[])
 
             kill(argv[i], SIGUSR1); // This send a signal to a parent process, In parent process I need to put a handler_signals
             
-            sleep(5);
+            sleep(1);
         }
         
 
