@@ -95,9 +95,36 @@ int main(int argc, char *argv[])
     while(1){
         /*send a signal to all process */
         for (i = 0; i< argc; i++){  
-            printf("%d", pids[i]);
+            /* send signal to all process*/
+            kill(argv[i], SIGUSR1);
+            /*increment the counter when send the signal*/
+            counter ++; 
+            sleep(1);
+            if(counter == 0){
+                /*in this case the proccess is alive*/
+                /*write into logfile*/   
+                FILE *logfile = fopen("logfile.txt", "a");
+                if(logfile < 0){ 
+                    //error opening log file
+                    perror("fopen: logfile");
+                    return 1;
+                }else{
+                    //wtite in logfile
+                    time_t current_time;
+                    //obtain local time
+                    time(&current_time);  
+                    fprintf(logfile, "%d the process %d is alive\n", ctime(&current_time), argv[i]);
+                    fclose(logfile);
+                }       
+            }else{
+                /*The proces doesn't work*/
+                /*kill all process*/
+                for (i = 0; i < argc; i++){
+                    kill(argv[i], SIGKILL);
 
-            kill(argv[i], SIGUSR1); // This send a signal to a parent process, In parent process I need to put a handler_signals
+                }
+            }
+
             
             sleep(1);
         }
