@@ -1,0 +1,18 @@
+char input_char;
+
+    input_char = getch();
+    while((input_char = getch()) != 'q'){
+        switch (input_char)
+        {
+        case 'w': case_execution(input_char); wrefresh(my_window);break;
+        case 'e': case_execution(input_char); wrefresh(my_window);break;
+        case 'r': case_execution(input_char); wrefresh(my_window);break;
+        case 'f': case_execution(input_char); wrefresh(my_window);break;
+        case 'v': case_execution(input_char); wrefresh(my_window);break;
+        case 'c': case_execution(input_char); wrefresh(my_window);break;
+        case 'x': case_execution(input_char); wrefresh(my_window);break;
+        case 's': case_execution(input_char); wrefresh(my_window);break;
+        case 'd': case_execution(input_char); wrefresh(my_window);break;
+        default: case_execution(input_char); wrefresh(my_window);break;
+        }
+    }
