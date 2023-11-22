@@ -21,7 +21,7 @@ int main(int argc, char *argv[]){
     int pipe_fd[2];
 
     for (int i = 1; i < argc; i++){
-        pipe_fd[i] = atoi(argv[i]);
+        pipe_fd[i-1] = atoi(argv[i]);
     }
     
     char input_char;
@@ -45,7 +45,6 @@ int main(int argc, char *argv[]){
     WINDOW *up_right_butt;
     WINDOW *down_left_butt;
     WINDOW *down_right_butt;
-
 
 
     // initialization row
@@ -113,13 +112,18 @@ WINDOW *create_new_window(int row, int col, int ystart, int xstart){
 void case_execution(char input_char, int PRy, int PRx, WINDOW *print_pointer, WINDOW *color_pointer, int write_fd, int read_fd){
     // pipe section
     // write on pipe
+    int controllo;
     close(read_fd);
-    write(write_fd, input_char, sizeof(char));
+    if ((controllo = write(write_fd, &input_char, 1))<0){
+        perror("errore write");
+    }
     //
     char string[30] = "hai premuto il tasto: ";
     strncat(string, &input_char, 1);
     mvwaddstr(print_pointer, PRy/2, ((PRx-strlen(string))/2), string);
+    wprintw(print_pointer, "valore controllo: %d", controllo);
     wrefresh(print_pointer);
+
     if(has_colors()==FALSE){
         mvwprintw(print_pointer, PRy/2, ((PRx-strlen("terminale non supporta colore"))/2), "terminale non supporta colore");
     }else{
