@@ -7,14 +7,23 @@
 #include <fcntl.h>
 #include <time.h>
 #include <sys/select.h>
-#include <string.h>
+#include <string.h> 
+#include <semaphore.h>
+#include <sys/mman.h>
+#include <signal.h>
+
 
 
 WINDOW *create_new_window(int row, int col, int ystart, int xstart);
-void case_execution(char input_char, int PRy, int PRx, WINDOW *print_pointer, WINDOW *color_pointer);
+void case_execution(char input_char, int PRy, int PRx, WINDOW *print_pointer, WINDOW *color_pointer, int write_fd, int read_fd);
 
-int main(){
-    sleep(10);
+int main(int argc, char *argv[]){
+    int pipe_fd[2];
+
+    for (int i = 1; i < argc; i++){
+        pipe_fd[i] = atoi(argv[i]);
+    }
+    
     char input_char;
 
     int Srow, Scol;
@@ -73,16 +82,16 @@ int main(){
     while((input_char = getch())!= 'q'){
         switch (input_char)
         {
-            case 'w': case_execution(input_char, PRy, PRx, printing_window, up_left_butt); break;
-            case 'e': case_execution(input_char, PRy, PRx, printing_window, up_butt); break;
-            case 'r': case_execution(input_char, PRy, PRx, printing_window, up_right_butt); break;
-            case 'f': case_execution(input_char, PRy, PRx, printing_window, right_butt); break;
-            case 'v': case_execution(input_char, PRy, PRx, printing_window, down_right_butt); break;
-            case 'c': case_execution(input_char, PRy, PRx, printing_window, down_butt); break;
-            case 'x': case_execution(input_char, PRy, PRx, printing_window, down_left_butt); break;
-            case 's': case_execution(input_char, PRy, PRx, printing_window, left_butt); break;
-            case 'd': case_execution(input_char, PRy, PRx, printing_window, central_butt); break;
-            default: case_execution('A', PRy, PRx, printing_window, central_butt); break;
+            case 'w': case_execution(input_char, PRy, PRx, printing_window, up_left_butt, pipe_fd[1], pipe_fd[0]); break;
+            case 'e': case_execution(input_char, PRy, PRx, printing_window, up_butt, pipe_fd[1], pipe_fd[0]); break;
+            case 'r': case_execution(input_char, PRy, PRx, printing_window, up_right_butt, pipe_fd[1], pipe_fd[0]); break;
+            case 'f': case_execution(input_char, PRy, PRx, printing_window, right_butt, pipe_fd[1], pipe_fd[0]); break;
+            case 'v': case_execution(input_char, PRy, PRx, printing_window, down_right_butt, pipe_fd[1], pipe_fd[0]); break;
+            case 'c': case_execution(input_char, PRy, PRx, printing_window, down_butt, pipe_fd[1], pipe_fd[0]); break;
+            case 'x': case_execution(input_char, PRy, PRx, printing_window, down_left_butt, pipe_fd[1], pipe_fd[0]); break;
+            case 's': case_execution(input_char, PRy, PRx, printing_window, left_butt, pipe_fd[1], pipe_fd[0]); break;
+            case 'd': case_execution(input_char, PRy, PRx, printing_window, central_butt, pipe_fd[1], pipe_fd[0]); break;
+            default: case_execution('A', PRy, PRx, printing_window, central_butt, pipe_fd[1], pipe_fd[0]); break;
         }
         // possibile aggiungere un controllo per vedere se i valori massimi della finestra sono stati modificati e rifare tutto il codice da sopra
         // direi che è oltre gli obbiettivi dell'assignment
@@ -101,9 +110,11 @@ WINDOW *create_new_window(int row, int col, int ystart, int xstart){
     return local_window;
 }
 
-void case_execution(char input_char, int PRy, int PRx, WINDOW *print_pointer, WINDOW *color_pointer){
+void case_execution(char input_char, int PRy, int PRx, WINDOW *print_pointer, WINDOW *color_pointer, int write_fd, int read_fd){
     // pipe section
     // write on pipe
+    close(read_fd);
+    write(write_fd, input_char, sizeof(char));
     //
     char string[30] = "hai premuto il tasto: ";
     strncat(string, &input_char, 1);
