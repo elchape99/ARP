@@ -78,7 +78,8 @@ int main(int argc, char *argv[]){
     down_right_butt = create_new_window(Wrow, Wcol, (CBstarty+Wrow), (CBstartx+Wcol));
 
     // case switch area
-    while((input_char = getch())!= 'q'){
+    do{
+        input_char = getch();
         switch (input_char)
         {
             case 'w': case_execution(input_char, PRy, PRx, printing_window, up_left_butt, pipe_fd[1], pipe_fd[0]); break;
@@ -90,11 +91,12 @@ int main(int argc, char *argv[]){
             case 'x': case_execution(input_char, PRy, PRx, printing_window, down_left_butt, pipe_fd[1], pipe_fd[0]); break;
             case 's': case_execution(input_char, PRy, PRx, printing_window, left_butt, pipe_fd[1], pipe_fd[0]); break;
             case 'd': case_execution(input_char, PRy, PRx, printing_window, central_butt, pipe_fd[1], pipe_fd[0]); break;
+            case 'q': case_execution(input_char, PRy, PRx, printing_window, central_butt, pipe_fd[1], pipe_fd[0]);break;
             default: case_execution('A', PRy, PRx, printing_window, central_butt, pipe_fd[1], pipe_fd[0]); break;
         }
         // possibile aggiungere un controllo per vedere se i valori massimi della finestra sono stati modificati e rifare tutto il codice da sopra
         // direi che è oltre gli obbiettivi dell'assignment
-    }
+    }while(input_char != 'q');
 
     // termination row
     endwin();
@@ -121,7 +123,7 @@ void case_execution(char input_char, int PRy, int PRx, WINDOW *print_pointer, WI
     char string[30] = "hai premuto il tasto: ";
     strncat(string, &input_char, 1);
     mvwaddstr(print_pointer, PRy/2, ((PRx-strlen(string))/2), string);
-    wprintw(print_pointer, "valore controllo: %d", controllo);
+    //wprintw(print_pointer, "valore controllo: %d", controllo);
     wrefresh(print_pointer);
 
     if(has_colors()==FALSE){

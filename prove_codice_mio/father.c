@@ -22,7 +22,7 @@ int main(int argc, char *argv[]){
     }
     
     char * arglist1[] = {"konsole", "-e","./input", str_pipe_fd[0], str_pipe_fd[1], NULL};
-    char * arglist2[] = {"konsole", "-e","./output", str_pipe_fd[0], str_pipe_fd[1], NULL};
+    char * arglist2[] = {"konsole", "-e","./drone", str_pipe_fd[0], str_pipe_fd[1], NULL};
 
 
     int pid1, pid2;
