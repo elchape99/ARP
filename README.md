@@ -7,6 +7,24 @@
 ## Implementation Advice
 ------------------------
 
+### Include needed
+'''
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <unistd.h>
+    #include <sys/wait.h>
+    #include <sys/types.h>
+    #include <stdlib.h>
+    #include <errno.h>
+'''
+With a FIFO I have also:
+'''
+    #include <sys/stat.h>
+    #include <sys/types.h>
+    #include <fcntl.h> // open
+'''
+
+
 ### Architecture side
 
 
