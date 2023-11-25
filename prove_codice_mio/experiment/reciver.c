@@ -18,6 +18,8 @@ int main(int argc, char *argv[]){
 
     for (int i = 1; i < argc; i++){
         pipe_fd[i-1] = atoi(argv[i]);
+        printf("valore pipe fd: %d\n", pipe_fd[i-1]);
+        fflush(stdout);
     }
     close(pipe_fd[1]); // chiudo scrittura
 
@@ -32,10 +34,10 @@ int main(int argc, char *argv[]){
     char read_ch;
 
     while(TRUE){
-        tv.tv_sec = 5;
+        tv.tv_sec = 1;
         tv.tv_usec = 0;
 
-        retval = select(1, &rfds, NULL, NULL, &tv);
+        retval = select(2, &rfds, NULL, NULL, &tv);
         if (retval < 0){
             perror("errore su select: ");
         }else if(retval == 0){

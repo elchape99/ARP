@@ -16,15 +16,18 @@
 
 int main(int argc, char *argv[]){
 
-    int pipe_go[2];
-    if((pipe(pipe_go)) < 0){
+    int pipe_fd[2];
+    if((pipe(pipe_fd)) < 0){
         perror("errore creazione pipe");
     }
 
     char str_pipe_fd[2][20];
     for (int i = 0; i < 2; i++)
     {
-        sprintf(str_pipe_fd[i], "%d", pipe_go[i]);
+        printf("valore pipe fd: %d\n", pipe_fd[i]);
+        fflush(stdout);
+        
+        sprintf(str_pipe_fd[i], "%d", pipe_fd[i]);
     }
     
     char * arglist1[] = {"konsole", "-e","./sender", str_pipe_fd[0], str_pipe_fd[1], NULL};

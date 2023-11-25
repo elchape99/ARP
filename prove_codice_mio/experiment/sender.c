@@ -18,6 +18,8 @@ int main(int argc, char *argv[]){
 
     for (int i = 1; i < argc; i++){
         pipe_fd[i-1] = atoi(argv[i]);
+        printf("valore pipe fd: %d\n", pipe_fd[i-1]);
+        fflush(stdout);
     }
     close(pipe_fd[0]);
 
