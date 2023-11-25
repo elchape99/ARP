@@ -11,6 +11,10 @@
 #include <semaphore.h>
 #include <sys/mman.h>
 #include <signal.h>
+
+#define SIGH_MSG "segnale kill ricevuto\n"
+
+void signalHandler(int signum);
  
 
 int main(int argc, char *argv[]){
@@ -28,11 +32,15 @@ int main(int argc, char *argv[]){
 
     int write_control;
 
-    char ch;
+    char ch = 'K';
+
+    struct sigaction kill_hand;
+    memset(&kill_hand, 0, sizeof(kill_hand));
+    kill_hand.sa_handler = signalHandler;
+    kill_hand.sa_flags = SA_RESTART;
 
     while (TRUE)
     {
-        ch = rand()%100;
         wait_time = rand()% 50000;
         usleep(wait_time);
 
@@ -47,7 +55,20 @@ int main(int argc, char *argv[]){
         printf("aspetto per scrivere: ( %d+1sec )\n", wait_time);
         fflush(stdout);
         sleep(1);
+
+        if(sigaction(SIGKILL, &kill_hand, NULL)<0){
+                perror("errore ricezione segnale");               
+            }
     }
 
     return 0;
+}
+
+void signalHandler(int signum){
+    if (signum == SIGKILL){
+        write(STDERR_FILENO, SIGH_MSG, sizeof(SIGH_MSG));
+        exit(EXIT_SUCCESS);
+    }else{
+        write(STDERR_FILENO, "errore ricezione, o messaggio sbagliato", sizeof("errore ricezione, o messaggio sbagliato"));
+    }
 }
