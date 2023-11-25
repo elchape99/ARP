@@ -1,7 +1,10 @@
 {
     "files.associations": {
         "stdio.h": "c",
-        "select.h": "c"
+        "select.h": "c",
+        "curses.h": "c",
+        "window.h": "c",
+        "signal.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
