@@ -1,15 +1,18 @@
 #include <stdio.h> 
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h> 
 #include <string.h> 
 #include <fcntl.h> 
 #include <sys/stat.h> 
 #include <sys/types.h> 
 #include <sys/select.h>
-#include <unistd.h> 
-#include <stdlib.h>
 #include <semaphore.h>
 #include <sys/mman.h>
 #include <signal.h>
 #include <time.h>
+#include <sys/wait.h>
+
 
 
 /*This function do an exec in child process*/
@@ -24,7 +27,7 @@ int spawn(const char * program, char ** arg_list) {
     //child process
     if (execvp (program, arg_list) == -1){
         perror("exec failed");
-        return -1;
+        return 1;
     }
  }
 }
@@ -35,11 +38,10 @@ int main() {
      */
 
     //Inizialize the log file, inizialize with mode w, all the data inside will be delete
-    
     FILE *logfile = fopen("logfile.txt", "w");
     if(logfile < 0){ //if problem opening file, send error
         perror("fopen: logfile");
-        return 1;
+        return 2;
     }else{
         //wtite in logfile
         time_t current_time;
@@ -55,10 +57,23 @@ int main() {
 
     //inizialize the variabiles needed
     int num_ps = 3;       
-    pid_t child_pids [num_ps];
+    pid_t child_pids [num_ps +1];
+    int i;
 
     //this array will need for convert the pisds number in string
     char child_pids_str [num_ps][80];
+/*
+    int fd[2];
+    if (pipe(fd) == -1){
+        perror("pipe");
+        return 3;
+    }
+    
+    char fd_str[2];
+    for (i = 0; i < 2; i++){
+
+    }
+    */
 
     //server process
     char * arg_list_server[] = {NULL};
@@ -69,8 +84,8 @@ int main() {
     child_pids[1] = spawn ("./drone", arg_list_drone);
 
     //keyboard_namager process
-    char * arg_list_i[] = {NULL};
-    child_pids[2] = spawn ("./input", arg_list_i);
+    char * arg_list_input[] = {NULL};
+    child_pids[2] = spawn ("./input", arg_list_input);
 
     sleep(0.5);
     //now need to convert all the integer pid in a string, than pass this string as a argv to watchdog process
@@ -81,16 +96,24 @@ int main() {
 
     // spawn watchdog, and pass as argument all the pid of processes
     char * arg_list_wd[] = {child_pids_str[0], child_pids_str[1], child_pids_str[2], NULL};
-    pid_t pid_wd = spawn ("./wd", arg_list_wd);
+    child_pids[3] = spawn ("./wd", arg_list_wd);
 
 
     
-    int wait_ps[num_ps];
-    for (int i = 0; i<num_ps; i++)
+    pid_t waitResult;
+    int status;
+    for (i = 0; i <= num_ps; i++)
     {
-        wait_ps[i] = waitpid(child_pids[i], NULL, 0);
-        waitpid(pid_wd, NULL, 0);
-        printf("process %i is close\n", wait_ps[i]);
+        waitResult = waitpid(child_pids[i], &status, 0);
+        if(waitResult == -1){
+            perror("waitpid:");
+            return 3;
+        }
+        if (WIFEXITED(status)) {
+            printf("Process %d is termined with status %d\n", i, WEXITSTATUS(status));
+        } else {
+            printf("Iprocess %d is termined with anomaly\n", i);
+        }
     }
     
     /*
