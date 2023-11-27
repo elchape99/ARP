@@ -1,87 +1,308 @@
-Sun Nov 19 21:27:40 2023
- => create master with pid 117049
-Sun Nov 19 21:27:40 2023
- => spawn drone with pid 117051
-Sun Nov 19 21:27:40 2023
- => spawn watchdog with pid 117053
-Sun Nov 19 21:27:40 2023
- => spawn server with pid 117050
-Sun Nov 19 21:27:40 2023
- => watchdog receive signal from 117050
-1090651680 the process 117050 is alive
-Sun Nov 19 21:27:40 2023
- => spawn INPUT with pid 117052
-Sun Nov 19 21:27:41 2023
- => watchdog receive signal from 117051
-1090651680 the process 117051 is alive
-Sun Nov 19 21:27:42 2023
- => watchdog receive signal from 117052
-1090651680 the process 117052 is alive
-Sun Nov 19 21:27:43 2023
- => watchdog receive signal from 117050
-1090651680 the process 117050 is alive
-Sun Nov 19 21:27:44 2023
- => watchdog receive signal from 117051
-1090651680 the process 117051 is alive
-Sun Nov 19 21:27:45 2023
- => watchdog receive signal from 117052
-1090651680 the process 117052 is alive
-Sun Nov 19 21:27:46 2023
- => watchdog receive signal from 117050
-1090651680 the process 117050 is alive
-Sun Nov 19 21:27:47 2023
- => watchdog receive signal from 117051
-1090651680 the process 117051 is alive
-Sun Nov 19 21:27:48 2023
- => watchdog receive signal from 117052
-1090651680 the process 117052 is alive
-Sun Nov 19 21:27:49 2023
- => watchdog receive signal from 117050
-1090651680 the process 117050 is alive
-Sun Nov 19 21:27:50 2023
- => watchdog receive signal from 117051
-1090651680 the process 117051 is alive
-Sun Nov 19 21:27:51 2023
- => watchdog receive signal from 117052
-1090651680 the process 117052 is alive
-Sun Nov 19 21:27:52 2023
- => watchdog receive signal from 117050
-1090651680 the process 117050 is alive
-Sun Nov 19 21:27:53 2023
- => watchdog receive signal from 117051
-1090651680 the process 117051 is alive
-Sun Nov 19 21:27:54 2023
- => watchdog receive signal from 117052
-1090651680 the process 117052 is alive
-Sun Nov 19 21:27:55 2023
- => watchdog receive signal from 117050
-1090651680 the process 117050 is alive
-Sun Nov 19 21:27:56 2023
- => watchdog receive signal from 117051
-1090651680 the process 117051 is alive
-Sun Nov 19 21:27:57 2023
- => watchdog receive signal from 117052
-1090651680 the process 117052 is alive
-Sun Nov 19 21:27:58 2023
- => watchdog receive signal from 117050
-1090651680 the process 117050 is alive
-Sun Nov 19 21:27:59 2023
- => watchdog receive signal from 117051
-1090651680 the process 117051 is alive
-Sun Nov 19 21:28:00 2023
- => watchdog receive signal from 117052
-1090651680 the process 117052 is alive
-Sun Nov 19 21:28:01 2023
- => watchdog receive signal from 117050
-1090651680 the process 117050 is alive
-Sun Nov 19 21:28:02 2023
- => watchdog receive signal from 117051
-1090651680 the process 117051 is alive
-Sun Nov 19 21:28:03 2023
- => watchdog receive signal from 117052
-1090651680 the process 117052 is alive
-Sun Nov 19 21:28:04 2023
- => watchdog receive signal from 117050
-1090651680 the process 117050 is alive
-Sun Nov 19 21:28:05 2023
- => watchdog receive signal from 117051
+Mon Nov 27 15:53:16 2023
+ => create master with pid 18368
+Mon Nov 27 15:53:16 2023
+ => spawn server with pid 18369
+Mon Nov 27 15:53:16 2023
+ => spawn INPUT with pid 18371
+Mon Nov 27 15:53:16 2023
+ => spawn drone with pid 18370
+Mon Nov 27 15:53:16 2023
+ => spawn watchdog with pid 18372
+Mon Nov 27 15:53:16 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:16 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:17 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:17 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:18 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:18 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:19 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:19 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:20 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:20 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:21 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:21 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:22 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:22 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:23 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:23 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:24 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:24 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:25 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:25 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:26 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:26 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:27 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:27 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:28 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:28 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:29 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:29 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:30 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:30 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:31 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:31 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:32 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:32 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:33 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:33 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:34 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:34 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:35 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:35 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:36 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:36 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:37 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:37 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:38 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:38 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:39 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:39 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:40 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:40 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:41 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:41 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:42 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:42 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:43 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:43 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:44 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:44 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:45 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:45 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:46 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:46 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:47 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:47 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:48 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:48 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:49 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:49 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:50 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:50 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:51 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:51 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:52 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:52 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:53 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:53 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:54 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:54 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:55 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:55 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:56 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:56 2023
+ the process 18370 is alive
+Mon Nov 27 15:53:57 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:53:57 2023
+ the process 18371 is alive
+Mon Nov 27 15:53:58 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:53:58 2023
+ the process 18369 is alive
+Mon Nov 27 15:53:59 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:53:59 2023
+ the process 18370 is alive
+Mon Nov 27 15:54:00 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:54:00 2023
+ the process 18371 is alive
+Mon Nov 27 15:54:01 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:54:01 2023
+ the process 18369 is alive
+Mon Nov 27 15:54:02 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:54:02 2023
+ the process 18370 is alive
+Mon Nov 27 15:54:03 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:54:03 2023
+ the process 18371 is alive
+Mon Nov 27 15:54:04 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:54:04 2023
+ the process 18369 is alive
+Mon Nov 27 15:54:05 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:54:05 2023
+ the process 18370 is alive
+Mon Nov 27 15:54:06 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:54:06 2023
+ the process 18371 is alive
+Mon Nov 27 15:54:07 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:54:07 2023
+ the process 18369 is alive
+Mon Nov 27 15:54:08 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:54:08 2023
+ the process 18370 is alive
+Mon Nov 27 15:54:09 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:54:09 2023
+ the process 18371 is alive
+Mon Nov 27 15:54:10 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:54:10 2023
+ the process 18369 is alive
+Mon Nov 27 15:54:11 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:54:11 2023
+ the process 18370 is alive
+Mon Nov 27 15:54:12 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:54:12 2023
+ the process 18371 is alive
+Mon Nov 27 15:54:13 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:54:13 2023
+ the process 18369 is alive
+Mon Nov 27 15:54:14 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:54:14 2023
+ the process 18370 is alive
+Mon Nov 27 15:54:15 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:54:15 2023
+ the process 18371 is alive
+Mon Nov 27 15:54:16 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:54:16 2023
+ the process 18369 is alive
+Mon Nov 27 15:54:17 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:54:17 2023
+ the process 18370 is alive
+Mon Nov 27 15:54:18 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:54:18 2023
+ the process 18371 is alive
+Mon Nov 27 15:54:19 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:54:19 2023
+ the process 18369 is alive
+Mon Nov 27 15:54:20 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:54:20 2023
+ the process 18370 is alive
+Mon Nov 27 15:54:21 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:54:21 2023
+ the process 18371 is alive
+Mon Nov 27 15:54:22 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:54:22 2023
+ the process 18369 is alive
+Mon Nov 27 15:54:23 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:54:23 2023
+ the process 18370 is alive
+Mon Nov 27 15:54:24 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:54:24 2023
+ the process 18371 is alive
+Mon Nov 27 15:54:25 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:54:25 2023
+ the process 18369 is alive
+Mon Nov 27 15:54:26 2023
+ => watchdog receive signal from 18370
+Mon Nov 27 15:54:26 2023
+ the process 18370 is alive
+Mon Nov 27 15:54:27 2023
+ => watchdog receive signal from 18371
+Mon Nov 27 15:54:27 2023
+ the process 18371 is alive
+Mon Nov 27 15:54:28 2023
+ => watchdog receive signal from 18369
+Mon Nov 27 15:54:28 2023
+ the process 18369 is alive
+Mon Nov 27 15:54:31 2023
+ the process 18369 is cloded by watchdog
+Mon Nov 27 15:54:31 2023
+ the process 18370 is cloded by watchdog
+Mon Nov 27 15:54:31 2023
+ the process 18371 is cloded by watchdog

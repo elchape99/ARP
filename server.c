@@ -13,8 +13,8 @@
 
 void sigusr1Handler(int signum, siginfo_t *info, void *context) {
     if (signum == SIGUSR1){
-        printf("signal handler SERVER\n");
         /*send a signal SIGUSR2 to watchdog */
+        printf("SERVER sig handler");
         kill(info->si_pid, SIGUSR2);
     }
 }

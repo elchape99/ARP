@@ -10,10 +10,12 @@
 #include <sys/mman.h>
 #include <signal.h>
 #include <time.h>
+pid_t wd;
 
 void sigusr1Handler(int signum, siginfo_t *info, void *context) {
     if (signum == SIGUSR1){
         /*send a signal SIGUSR2 to watchdog */
+        wd = info->si_pid;
         kill(info->si_pid, SIGUSR2);
     }
 }
@@ -37,7 +39,8 @@ int main(int argc, char *argv[]) {
     }
        
 
-    //configure the handler for sigusr1
+    //configure the handler for sigusr1#include <sys/wait.h>
+
     struct sigaction sa_usr1;
     sa_usr1.sa_sigaction = sigusr1Handler;
     sa_usr1.sa_flags = SA_SIGINFO;
@@ -49,8 +52,7 @@ int main(int argc, char *argv[]) {
 
    
     while(1){        
-        /* write the code of the server here*/
-        sleep(1);
+        sleep(60);
 
     }
     
