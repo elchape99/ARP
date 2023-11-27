@@ -35,6 +35,7 @@ int main (int argc, char* argv[])
     raw();
     noecho();
     start_color();
+    keypad(stdscr, TRUE);
 
     getmaxyx(stdscr, Srow, Scol);
     refresh();
@@ -44,9 +45,10 @@ int main (int argc, char* argv[])
     CBstarty = Starty; 
     CBstartx = Startx;
     refresh();    
-    mvwprintw(printing_window,0,0,"Description of the game: \n");
-    wprintw(printing_window,"\nThis game is a simple game of a drone control, where the user can press \nthis buttons to drive the robot to avoid the obstacles and reach the targets.\n");
+    printw("Description of the game: \n");
+    printw("\nThis game is a simple game of a drone control, where the user can press \nthis buttons to drive the robot to avoid the obstacles and reach the targets.\n");
     // wrefresh(external_window);
+    refresh();
     wrefresh(printing_window);
 
     for (int i = 0; i < NUMWINDOWS; i++){
@@ -96,13 +98,9 @@ int main (int argc, char* argv[])
                 break;
         }
     }
-    
 
-    
-
-
-
-
+    printw("\nPress any key to exit\n");
+    refresh();
     wgetch(printing_window);
     wrefresh(printing_window);
     endwin();

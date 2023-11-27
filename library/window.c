@@ -18,7 +18,7 @@ void destroy_win(WINDOW *local_win) {
 
 void init_windows(int Srow, int Scol, WINDOW **external_window, WINDOW **printing_window, int *PRy, int *PRx,int *Startx, int *Starty,int *Wcol, int *Wrow) {
     
-    *Wrow = (int)(Srow * 0.9);
+    *Wrow = (int)(Srow * 0.8);
     *Wcol = (int)(Scol * 0.8);
     *Starty = 0; 
     *Startx = (int)((Scol - (*Wcol))/2);
@@ -51,7 +51,7 @@ void print_btt_windows(WINDOW **win, char ch) {
         wattron(*win, COLOR_PAIR(1) | A_BOLD);
     }
     
-    mvwaddch(*win,(int) ((maxY - 2) / 2), (int) ((maxX - 1) / 2), ch);
+    mvwaddch(*win,(int) ((maxY) / 2), (int) ((maxX - 1) / 2), ch);
     
     if (ch == 'Q') {
         wattroff(*win, COLOR_PAIR(2) | A_BOLD);

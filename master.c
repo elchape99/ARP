@@ -30,9 +30,12 @@ int spawn(const char * program, char ** arg_list) {
 }
 
 int main() {
-    /* The master spawn all the process with watchdog at the end, so it can pass in argv all the process pid. 
+    /* 
+    The master spawn all the process with watchdog at the end, so it can pass in argv all the process pid. 
     After throught pipe it will pass at all process the watchdog pid.
-     */
+    */
+   pid_t pid_des;
+   
 
     //Inizialize the log file, inizialize with mode w, all the data inside will be delete
     
@@ -48,9 +51,24 @@ int main() {
         fprintf(logfile, "%s => create master with pid %d\n", ctime(&current_time), getpid());
         fclose(logfile);
     }
+    // now we start showing the description of th game
+    printf("Welcome to the Drone Game!\n");
+    if ((pid_des = fork()) == -1) {
+        perror("fork description");
+        return 2;
+    }
+    if (pid_des == 0) {
+        // child description process
+        char * arg_list_des[] = {NULL};
+        if (execvp("./description", arg_list_des) == -1){
+            perror("exec failed");
+            return -1;
+        }
+    }else{
+        //parent process
+        wait(NULL);
+    }
     
-    
-
     //now are implemented 3 processes, server, drone, input plus watchdog
 
     //inizialize the variabiles needed
