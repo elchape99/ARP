@@ -30,6 +30,9 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++){
         pipe_fd[i-1] = atoi(argv[i]);
     }
+    printf("valore fd controllo(s,l): %d, %d\n", pipe_fd[1], pipe_fd[0]);
+    fflush(stdout);
+    
     char input_char; // definisco la variabile di input
 
     //write into logfile

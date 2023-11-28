@@ -8,6 +8,7 @@
 #include <stdlib.h> 
 #include <semaphore.h> 
 #include <sys/mman.h> 
+#include <sys/wait.h>
 #include <signal.h> 
 #include <time.h>
 
@@ -24,7 +25,7 @@ int write_logfile (char *str){
         //obtain local time
         time(&current_time);  
         fprintf(logfile, "%s", ctime(&current_time));
-        fprintf(logfile,str);
+        fprintf(logfile, "%s", str);
         fclose(logfile);
         return 0;
     }
@@ -39,7 +40,7 @@ void sigusr2Handler(int signum, siginfo_t *info, void *context) {
         if(logfile < 0){ 
             //error opening log file
             perror("fopen: logfile");
-            return 1;
+            exit(EXIT_SUCCESS);
         }else{
             //wtite in logfile
             time_t current_time;
@@ -78,6 +79,7 @@ int main(int argc, char *argv[])
     struct sigaction sa_usr2;
     sa_usr2.sa_handler = sigusr2Handler;
     sa_usr2.sa_flags = SA_SIGINFO;
+    
     if (sigaction(SIGUSR2, &sa_usr2, NULL) == -1){ 
         perror("sigaction");
         return -1;

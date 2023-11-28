@@ -6,4 +6,4 @@ gcc master.c -o master
 gcc pippo.c -o pippo
 gcc server.c -lncurses -o server
 gcc spawn.c -o spawn
-
+gcc wd.c -o wd

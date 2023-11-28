@@ -1,4 +1,10 @@
-Tue Nov 28 16:00:22 2023
- => create master with pid 12393
-Tue Nov 28 16:00:22 2023
- => spawn server with pid 12394
+Tue Nov 28 17:54:23 2023
+ => create master with pid 18331
+Tue Nov 28 17:54:25 2023
+ => spawn server with pid 18405
+Tue Nov 28 17:54:25 2023
+ => spawn INPUT with pid 18407
+Tue Nov 28 17:54:25 2023
+ => spawn drone with pid 18409
+Tue Nov 28 17:54:25 2023
+ => spawn watchdog with pid 18411

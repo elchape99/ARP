@@ -35,6 +35,9 @@ int main(int argc,char *argv[]) {
     for (int i = 1; i < argc; i++){
         pipe_fd[i-1] = atoi(argv[i]);
     }
+    printf("valore fd controllo(s,l): %d, %d\n", pipe_fd[1], pipe_fd[0]);
+    fflush(stdout);
+
     close(pipe_fd[1]);
 
     //write into logfile
@@ -51,7 +54,6 @@ int main(int argc,char *argv[]) {
         fprintf(logfile, "%s => spawn drone with pid %d\n", ctime(&current_time), getpid());
         fclose(logfile);
     }
-    
 
     //configure the handler for sigusr1
     struct sigaction sa_usr1;
@@ -65,6 +67,13 @@ int main(int argc,char *argv[]) {
     
     // inizializzazione delle variabili per la dinamica
     double *input_vect = malloc(sizeof(double)*8); // riservo la memoria per il vettore di input
+    for (int i = 0; i < 8; i++)
+    {
+        input_vect[i] = 0.0;
+        printf("%.2f  ", input_vect[i]);
+        fflush(stdout);
+    }
+    
 
     double XForce = 0.0, YForce = 0.0;
     double *XForce_p = &XForce, *YForce_p =  &YForce;
@@ -154,7 +163,10 @@ double *generate_input_vect(double **vect_pointer, char ch){
 double *put_vector_to_zero(double **vect_pointer){
     for(int i = 0; i<8; i++){
         (*vect_pointer)[i] = 0.0; // inizializzazione
+        printf("%d", i);
     }
+    printf("\n");
+    fflush(stdout);
 }
 
 double *generate_x_force(double *vect_pointer, double *force){
