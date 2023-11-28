@@ -90,13 +90,13 @@ int main() {
     sleep(0.5);
     //now need to convert all the integer pid in a string, than pass this string as a argv to watchdog process
     //convert all the pid process fron int to string using sprintf
-    for(int i = 0; i < num_ps; i++){   
-        sprintf(child_pids_str[i], "%d", child_pids[i]);
-    }
+    // for(int i = 0; i < num_ps; i++){   
+    //     sprintf(child_pids_str[i], "%d", child_pids[i]);
+    // }
 
-    // spawn watchdog, and pass as argument all the pid of processes
-    char * arg_list_wd[] = {"konsole", "-e","./wd", child_pids_str[0], child_pids_str[1], child_pids_str[2], NULL};
-    pid_t pid_wd = spawn ("konsole", arg_list_wd);
+    // // spawn watchdog, and pass as argument all the pid of processes
+    // char * arg_list_wd[] = {"konsole", "-e","./wd", child_pids_str[0], child_pids_str[1], child_pids_str[2], NULL};
+    // pid_t pid_wd = spawn ("konsole", arg_list_wd);
 
     
     // avoid master terminating
