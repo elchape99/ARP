@@ -21,8 +21,8 @@ int main(int argc, char *argv[]){
         sprintf(str_pipe_fd[i], "%d", pipe_go[i]);
     }
     
-    char * arglist1[] = {"konsole", "-e","./input", str_pipe_fd[0], str_pipe_fd[1], NULL};
-    char * arglist2[] = {"konsole", "-e","./drone", str_pipe_fd[0], str_pipe_fd[1], NULL};
+    char * arglist1[] = {"konsole", "-e","./Minput", str_pipe_fd[0], str_pipe_fd[1], NULL};
+    char * arglist2[] = {"konsole", "-e","./Mdrone", str_pipe_fd[0], str_pipe_fd[1], NULL};
 
 
     int pid1, pid2;

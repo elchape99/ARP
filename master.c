@@ -4,6 +4,7 @@
 #include <sys/stat.h> 
 #include <sys/types.h> 
 #include <sys/select.h>
+#include <sys/wait.h>
 #include <unistd.h> 
 #include <stdlib.h>
 #include <semaphore.h>
@@ -48,9 +49,18 @@ int main() {
         fprintf(logfile, "%s => create master with pid %d\n", ctime(&current_time), getpid());
         fclose(logfile);
     }
-    
-    
 
+    int pipe_fd[2]; // creazione dell'array per le pipe
+    if((pipe(pipe_fd)) < 0){
+        perror("errore creazione pipe in");
+    }
+
+    char str_pipe_fd[2][20]; // conversione fd pipe in stringhe
+    for (int i = 0; i < 2; i++)
+    {
+        sprintf(str_pipe_fd[i], "%d", pipe_fd[i]);
+    }
+    
     //now are implemented 3 processes, server, drone, input plus watchdog
 
     //inizialize the variabiles needed
@@ -64,13 +74,15 @@ int main() {
     char * arg_list_server[] = {NULL};
     child_pids[0] = spawn("./server", arg_list_server);
     
-    //drone process
-    char * arg_list_drone[] = {NULL};
-    child_pids[1] = spawn ("./drone", arg_list_drone);
+    //drone process -----------------------------------------------------------------------
+    char * arg_list_drone[] = {"konsole", "-e","./drone", str_pipe_fd[0], str_pipe_fd[1], NULL};
+    child_pids[1] = spawn ("./konsole", arg_list_drone);
 
-    //keyboard_namager process
-    char * arg_list_i[] = {NULL};
-    child_pids[2] = spawn ("./input", arg_list_i);
+    //keyboard_namager process ------------------------------------------------------------
+    char * arg_list_i[] = {"konsole", "-e","./input", str_pipe_fd[0], str_pipe_fd[1], NULL};
+    child_pids[2] = spawn ("./konsole", arg_list_i);
+
+    // ---------------------------------------------------------------------------------//
 
     sleep(0.5);
     //now need to convert all the integer pid in a string, than pass this string as a argv to watchdog process
@@ -80,27 +92,30 @@ int main() {
     }
 
     // spawn watchdog, and pass as argument all the pid of processes
-    char * arg_list_wd[] = {child_pids_str[0], child_pids_str[1], child_pids_str[2], NULL};
-    pid_t pid_wd = spawn ("./wd", arg_list_wd);
+    //char * arg_list_wd[] = {child_pids_str[0], child_pids_str[1], child_pids_str[2], NULL};
+    //pid_t pid_wd = spawn ("./wd", arg_list_wd);
 
 
-    
+    /*
     int wait_ps[num_ps];
     for (int i = 0; i<num_ps; i++)
     {
         wait_ps[i] = waitpid(child_pids[i], NULL, 0);
         waitpid(pid_wd, NULL, 0);
         printf("process %i is close\n", wait_ps[i]);
-    }
+    }*/
     
-    /*
+    
     while (1)
     {   
+    /*
         if(wait(NULL) == -1){
             break;
-        }
+        }*/
+        sleep(1);
     }
-    */
+    
+    
 
     return 0;
 }

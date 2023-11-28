@@ -12,6 +12,7 @@
 #include <sys/mman.h>
 #include <signal.h>
 
+
 double *generate_input_vect(double **vect_pointer, char ch);
 double *put_vector_to_zero(double **vect_pointer);
 
@@ -60,8 +61,8 @@ int main(int argc, char *argv[]){
         FD_ZERO(&read_fd);
         FD_SET(pipe_fd[0], &read_fd);
 
-        time_sel.tv_sec = 3;
-        time_sel.tv_usec = 0;
+        time_sel.tv_sec = 0;
+        time_sel.tv_usec = 500000;
 
         if((retVal_sel = select(pipe_fd[0]+1, &read_fd, NULL, NULL, &time_sel))<0){
             perror("errore select: ");
