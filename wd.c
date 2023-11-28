@@ -10,27 +10,29 @@
 #include <sys/mman.h> 
 #include <signal.h> 
 #include <time.h>
+#include <stdarg.h>
 
-void writeLogFile(char *contenuto) {
-    // Open file in append way
+void writeLog(const char *format, ...) {
+    
     FILE *logfile = fopen("logfile.txt", "a");
-
-    // Check the file opening
     if (logfile < 0) {
-        perror("fopen: logfile");
-        return;
+        perror("Error opening logfile");
+        exit(EXIT_FAILURE);
     }
+    va_list args;
+    va_start(args, format);
 
-    // Write on file
     time_t current_time;
-    //obtain local time
-    time(&current_time);  
-    fprintf(logfile, "%s", ctime(&current_time));
-    fprintf(logfile, "%s", contenuto);
+    time(&current_time);
 
-    // Close file descriptor
-    fclose(file);
+    fprintf(logfile, "%s => ", ctime(&current_time));
+    vfprintf(logfile, format, args);
+
+    va_end(args);
+    fflush(logfile);
 }
+
+
 
 /*  when signal arrive counter --
     when wd send kill counter ++ */
@@ -40,72 +42,29 @@ int counter = 0;
 /*signal hadler function*/
 void sigusr2Handler(int signum, siginfo_t *info, void *context) {
     if(signum == SIGUSR2){
-
-        //write into logfile
-        FILE *logfile = fopen("logfile.txt", "a");
-        if(logfile < 0){ 
-            //error opening log file
-            perror("fopen: logfile");
-        }else{
-            //wtite in logfile
-            time_t current_time;
-            //obtain local time
-            time(&current_time);  
-            fprintf(logfile, "%s => watchdog receive signal from %d\n", ctime(&current_time), info->si_pid);
-            if(fclose(logfile) < 0){
-                perror("fclose: logfile");
-            }
-            counter --;
-        }
-    }    
-}
+        writeLog("WATCHDOG received signal from %d", info->si_pid);
+        counter --;
+    }
+}    
 
 
 int main(int argc, char *argv[])  
 {
-
+    // In this array I will put all the proces pid converted in int
     pid_t pids[argc];
-    int i;
-/*
-    //write into logfile
-    FILE *logfile = fopen("logfile.txt", "a");
-    if(logfile < 0){ 
-        //error opening log file
-        perror("fopen: logfile");
-        return 1;
-    }else{
-        //wtite in logfile
-        time_t current_time;
-        //obtain local time
-        time(&current_time);  
-        fprintf(logfile, "%s => spawn watchdog with pid %d\n", ctime(&current_time), getpid());
-
-        if(fclose(logfile) < 0){
-            perror("fclose: logfile");
-            return 1;
-            } 
-
-        for ( i = 0; i< argc; i++){
-            fprintf(logfile, "received pid :%s as argument in wd\n", argv[i]);
-        }
-    }
-    */
-
-   char contenuto[] = ("=> spawn watchdog with pid %d\n", getpid());
-
-   
+    int i; //declared for all the for cycle
 
     /*configure the handler for sigusr2*/
     struct sigaction sa_usr2;
     sa_usr2.sa_sigaction = sigusr2Handler;
-    sa_usr2.sa_flags = SA_SIGINFO;
-
+    sa_usr2.sa_flags = SA_SIGINFO; // I need also the info foruse the pid of the process for unde
     if (sigaction(SIGUSR2, &sa_usr2, NULL) == -1){ 
         perror("sigaction");
         return -1;
     }
     /* convert the pid in argv from dtring to int*/
     for (i = 0; i < argc; i++){
+        // convert all the pid form string to int
         pids[i] = atoi(argv[i]);
     }
 
@@ -116,56 +75,25 @@ int main(int argc, char *argv[])
             kill(pids[i], SIGUSR1);
             /* increment the counter when send the signal*/
             counter ++; 
-            sleep(2);
-
-            printf("%i", counter);
-
+            sleep(1);
+            printf("%d", counter);
+            fflush(stdout);
             if(counter == 0){
-                /* in this case the proccess is alive*/
+                /* in this case the proccess is alive*
                 /* write into logfile*/   
-                FILE *logfile = fopen("logfile.txt", "a");
-                if(logfile < 0){ 
-                    // error opening log file
-                    perror("fopen: logfile");
-                    return 1;
-                }else{
-                    // wtite in logfile
-                    time_t current_time;
-                    // obtain local time
-                    time(&current_time);  
-                    fprintf(logfile, "%s the process %s is alive\n", ctime(&current_time), argv[i]);
-                    if (fclose(logfile) == -1){
-                        perror("fclose");
-                        return 1;
-
-                    }                
-                }       
+                writeLog("Process %d is alive", pids[i]);
+               
             }else{
                 /*The proces doesn't work*/
                 /*kill all process*/
-                for (i = 0; i < argc; i++){
-                    kill(pids[i], SIGKILL);
-                    /*write into logfile*/   
-                    FILE *logfile = fopen("logfile.txt", "a");
-                    if(logfile < 0){ 
-                        //error opening log file
-                        perror("fopen: logfile");
-                        return 1;
-                    }else{
-                        //wtite in logfile
-                        time_t current_time;
-                        //obtain local time
-                        time(&current_time);  
-                        fprintf(logfile, "%s the process %s is cloded by watchdog\n", ctime(&current_time), argv[i]);
-                        if (fclose(logfile) == -1){
-                            perror("fclose");
-                            return 1;                        
-                        }
-                    }        
+                for (int j = 0; j < argc; j++){
+                    kill(pids[j], SIGKILL);
+                    /*write into logfile that wd close the process*/   
+                    writeLog("process %d is closed by WATCHDOG", pids[j]);
                 }
                 exit(0);
-            }         
-            sleep(1);
+            }    
+        sleep(5);     
         }     
     }
     return 0;

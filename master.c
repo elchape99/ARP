@@ -12,8 +12,29 @@
 #include <signal.h>
 #include <time.h>
 #include <sys/wait.h>
+#include <stdarg.h>
 
 
+/* Function for write into logfile */
+void writeLog(const char *format, ...) {
+    
+    FILE *logfile = fopen("logfile.txt", "a");
+    if (logfile < 0) {
+        perror("Error opening logfile");
+        exit(EXIT_FAILURE);
+    }
+    va_list args;
+    va_start(args, format);
+
+    time_t current_time;
+    time(&current_time);
+
+    fprintf(logfile, "%s => ", ctime(&current_time));
+    vfprintf(logfile, format, args);
+
+    va_end(args);
+    fflush(logfile);
+}
 
 /*This function do an exec in child process*/
 int spawn(const char * program, char ** arg_list) {
@@ -47,7 +68,7 @@ int main() {
         time_t current_time;
         //obtain local time
         time(&current_time);
-        fprintf(logfile, "%s => create master with pid %d\n", ctime(&current_time), getpid());
+        fprintf(logfile, "%s => create MASTER with pid %d\n", ctime(&current_time), getpid());
         fclose(logfile);
     }
     

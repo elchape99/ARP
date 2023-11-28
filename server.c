@@ -10,11 +10,33 @@
 #include <sys/mman.h>
 #include <signal.h>
 #include <time.h>
+#include <stdarg.h>
+
+/* function for write in logfile*/
+void writeLog(const char *format, ...) {
+    
+    FILE *logfile = fopen("logfile.txt", "a");
+    if (logfile < 0) {
+        perror("Error opening logfile");
+        exit(EXIT_FAILURE);
+    }
+    va_list args;
+    va_start(args, format);
+
+    time_t current_time;
+    time(&current_time);
+
+    fprintf(logfile, "%s => ", ctime(&current_time));
+    vfprintf(logfile, format, args);
+
+    va_end(args);
+    fflush(logfile);
+}
 
 void sigusr1Handler(int signum, siginfo_t *info, void *context) {
     if (signum == SIGUSR1){
         /*send a signal SIGUSR2 to watchdog */
-        printf("SERVER sig handler");
+        //printf("SERVER sig handler");
         kill(info->si_pid, SIGUSR2);
     }
 }

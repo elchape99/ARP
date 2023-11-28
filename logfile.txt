@@ -1,112 +1,13 @@
-Mon Nov 27 19:29:29 2023
- => create master with pid 27800
-Mon Nov 27 19:29:29 2023
- => spawn server with pid 27802
-Mon Nov 27 19:29:29 2023
- => spawn watchdog with pid 27805
-Mon Nov 27 19:29:29 2023
- => spawn drone with pid 27803
-Mon Nov 27 19:29:29 2023
- => spawn INPUT with pid 27804
-Mon Nov 27 19:29:29 2023
- => watchdog receive signal from 27802
-Mon Nov 27 19:29:29 2023
- the process 27802 is alive
-Mon Nov 27 19:29:30 2023
- => watchdog receive signal from 27803
-Mon Nov 27 19:29:30 2023
- the process 27803 is alive
-Mon Nov 27 19:29:31 2023
- => watchdog receive signal from 27804
-Mon Nov 27 19:29:31 2023
- the process 27804 is alive
-Mon Nov 27 19:29:32 2023
- => watchdog receive signal from 27802
-Mon Nov 27 19:29:32 2023
- the process 27802 is alive
-Mon Nov 27 19:29:33 2023
- => watchdog receive signal from 27803
-Mon Nov 27 19:29:33 2023
- the process 27803 is alive
-Mon Nov 27 19:29:34 2023
- => watchdog receive signal from 27804
-Mon Nov 27 19:29:34 2023
- the process 27804 is alive
-Mon Nov 27 19:29:35 2023
- => watchdog receive signal from 27802
-Mon Nov 27 19:29:35 2023
- the process 27802 is alive
-Mon Nov 27 19:29:36 2023
- => watchdog receive signal from 27803
-Mon Nov 27 19:29:36 2023
- the process 27803 is alive
-Mon Nov 27 19:29:37 2023
- => watchdog receive signal from 27804
-Mon Nov 27 19:29:37 2023
- the process 27804 is alive
-Mon Nov 27 19:29:38 2023
- => watchdog receive signal from 27802
-Mon Nov 27 19:29:38 2023
- the process 27802 is alive
-Mon Nov 27 19:29:39 2023
- => watchdog receive signal from 27803
-Mon Nov 27 19:29:39 2023
- the process 27803 is alive
-Mon Nov 27 19:29:40 2023
- => watchdog receive signal from 27804
-Mon Nov 27 19:29:40 2023
- the process 27804 is alive
-Mon Nov 27 19:29:41 2023
- => watchdog receive signal from 27802
-Mon Nov 27 19:29:41 2023
- the process 27802 is alive
-Mon Nov 27 19:29:42 2023
- => watchdog receive signal from 27803
-Mon Nov 27 19:29:42 2023
- the process 27803 is alive
-Mon Nov 27 19:29:43 2023
- => watchdog receive signal from 27804
-Mon Nov 27 19:29:43 2023
- the process 27804 is alive
-Mon Nov 27 19:29:44 2023
- => watchdog receive signal from 27802
-Mon Nov 27 19:29:44 2023
- the process 27802 is alive
-Mon Nov 27 19:29:45 2023
- => watchdog receive signal from 27803
-Mon Nov 27 19:29:45 2023
- the process 27803 is alive
-Mon Nov 27 19:29:46 2023
- => watchdog receive signal from 27804
-Mon Nov 27 19:29:46 2023
- the process 27804 is alive
-Mon Nov 27 19:29:47 2023
- => watchdog receive signal from 27802
-Mon Nov 27 19:29:47 2023
- the process 27802 is alive
-Mon Nov 27 19:29:48 2023
- => watchdog receive signal from 27803
-Mon Nov 27 19:29:48 2023
- the process 27803 is alive
-Mon Nov 27 19:29:49 2023
- => watchdog receive signal from 27804
-Mon Nov 27 19:29:49 2023
- the process 27804 is alive
-Mon Nov 27 19:29:50 2023
- => watchdog receive signal from 27802
-Mon Nov 27 19:29:50 2023
- the process 27802 is alive
-Mon Nov 27 19:29:51 2023
- => watchdog receive signal from 27803
-Mon Nov 27 19:29:51 2023
- the process 27803 is alive
-Mon Nov 27 19:29:52 2023
- => watchdog receive signal from 27804
-Mon Nov 27 19:29:52 2023
- the process 27804 is alive
-Mon Nov 27 19:29:55 2023
- the process 27802 is cloded by watchdog
-Mon Nov 27 19:29:55 2023
- the process 27803 is cloded by watchdog
-Mon Nov 27 19:29:55 2023
- the process 27804 is cloded by watchdog
+Tue Nov 28 17:58:56 2023
+ => create MASTER with pid 58639
+Tue Nov 28 17:58:56 2023
+ => spawn server with pid 58640
+Tue Nov 28 17:58:56 2023
+ => spawn INPUT wit pid 58642Tue Nov 28 17:58:56 2023
+ => WATCHDOG received signal from 58640Tue Nov 28 17:58:56 2023
+ => Process 58640 is aliveTue Nov 28 17:58:56 2023
+ => spawn drone with pid 58641Tue Nov 28 17:59:01 2023
+ => WATCHDOG received signal from 58641Tue Nov 28 17:59:01 2023
+ => Process 58641 is aliveTue Nov 28 17:59:06 2023
+ => WATCHDOG received signal from 58642Tue Nov 28 17:59:06 2023
+ => Process 58642 is alive
