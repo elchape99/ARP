@@ -12,9 +12,7 @@
 #include <sys/mman.h>
 #include <signal.h>
 
-#define SIGH_MSG "segnale kill ricevuto\n"
-
-void signalHandler(int signum);
+void singnalHandlerFunction(int signum);
  
 
 int main(int argc, char *argv[]){
@@ -34,14 +32,16 @@ int main(int argc, char *argv[]){
 
     char ch = 'K';
 
-    struct sigaction kill_hand;
-    memset(&kill_hand, 0, sizeof(kill_hand));
-    kill_hand.sa_handler = signalHandler;
-    kill_hand.sa_flags = SA_RESTART;
+    struct sigaction sa_usr1;
+    sa_usr1.sa_handler = singnalHandlerFunction;
+
+    if(sigaction(SIGTERM, &sa_usr1, NULL) == -1){
+        perror("errore sigaction: ");
+    }
 
     while (TRUE)
     {
-        wait_time = rand()% 50000;
+        wait_time = rand()% 5000;
         usleep(wait_time);
 
         write_control = write(pipe_fd[1], &ch, 1);
@@ -49,26 +49,26 @@ int main(int argc, char *argv[]){
             perror("errore write: ");
             fflush(stdout);
         }else{
-            printf("tutto ok, scritto byte: ( %d )\n, carattere scritto: ( %c )", write_control, ch);
+            printf("tutto ok, scritto byte: ( %d ), carattere scritto: ( %c )", write_control, ch);
             fflush(stdout);
         }
         printf("aspetto per scrivere: ( %d+1sec )\n", wait_time);
         fflush(stdout);
         sleep(1);
-
-        if(sigaction(SIGKILL, &kill_hand, NULL)<0){
-                perror("errore ricezione segnale");               
-            }
     }
 
     return 0;
 }
 
-void signalHandler(int signum){
-    if (signum == SIGKILL){
-        write(STDERR_FILENO, SIGH_MSG, sizeof(SIGH_MSG));
+void singnalHandlerFunction(int signum){
+    if (signum == SIGTERM){
+        printf("Ricevuto segnale di stop\n");
+        fflush(stdout);
+        sleep(3);
+
         exit(EXIT_SUCCESS);
     }else{
-        write(STDERR_FILENO, "errore ricezione, o messaggio sbagliato", sizeof("errore ricezione, o messaggio sbagliato"));
+        printf("Segnale diverso da SIGKILL, continuo esecuzione\n");
+        fflush(stdout);
     }
 }

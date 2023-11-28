@@ -42,40 +42,64 @@ int main(int argc, char *argv[]){
 
 
     double *input_vect = malloc(sizeof(double)*8); // riservo la memoria per il vettore di input
-    double XForce = 0.0, YForce = 0.0;
-    double *XForce_p = &XForce, *YForce_p =  &YForce; 
 
-    int read_cont;
+    double XForce = 0.0, YForce = 0.0;
+    double *XForce_p = &XForce, *YForce_p =  &YForce;
+
+    double Xvel = 0.0, Yvel =0.0, Xpos =0.0, Ypos = 0.0;
+    double *Xvel_p = &Xvel, *Xpos_p = &Xpos, *Yvel_p = &Yvel, *Ypos_p = &Ypos;
+
+    int retVal_read;
     char ch;
+
+    int retVal_sel;
+    fd_set read_fd;
+    struct timeval time_sel;
+
     while(TRUE){
-        read_cont = read(pipe_fd[0], &ch, 1);
-        if (read_cont < 0){
-            printf("errore read from pipe in drone\n");
+        FD_ZERO(&read_fd);
+        FD_SET(pipe_fd[0], &read_fd);
+
+        time_sel.tv_sec = 3;
+        time_sel.tv_usec = 0;
+
+        if((retVal_sel = select(pipe_fd[0]+1, &read_fd, NULL, NULL, &time_sel))<0){
+            perror("errore select: ");
+        }else if (retVal_sel == 0){
+            printf("no new data\n");
             fflush(stdout);
         }else{
-            printf("conteggio byte letti: %d\n", read_cont);
+            if((retVal_read = read(pipe_fd[0], &ch, 1)) < 0){
+                perror("errore read");
+            }else{
+                printf("controllo lettura: %d, ( %c )\n", retVal_read, ch);
+                fflush(stdout);
+            }
+            input_vect = generate_input_vect(&input_vect, ch); // gli passo il valore di input ricevuto e scrivo nel vettore
+            for (int i = 0; i < 8; i++){
+                printf("%.2f ", input_vect[i]);
+            }
+            printf("\n");
             fflush(stdout);
         }
-
-        input_vect = generate_input_vect(&input_vect, ch); // gli passo il valore di input ricevuto e scrivo nel vettore
-
-        for(int i=0; i<8; i++){
-            printf("%.2f ", input_vect[i]);
-        }
-        printf("\n");
-        fflush(stdout);
 
         XForce_p = generate_x_force(input_vect, XForce_p);
         YForce_p = generate_y_force(input_vect, YForce_p);
-
-        printf("forza X= %.2f, forza Y= %.2f\n\n", *XForce_p, *YForce_p);
-        fflush(stdout);
          
         // genera velocità
+        Xvel_p = velocity(*XForce_p, *Xvel_p, Xvel_p);
+        Yvel_p = velocity(*YForce_p, *Yvel_p, Yvel_p);
+        //printf("controllo valori: yf:%.2f, yVel:%.2f\n", *YForce_p, *Yvel_p);
+        fflush(stdout);
+        
+
         // genera posizione 
+        Xpos_p = position(*Xvel_p, *Xpos_p, Xpos_p);
+        Ypos_p = position(*Yvel_p, *Ypos_p, Ypos_p);
 
         // invia posizione a server (mappa)
-
+        printf("forVal(x,y):%.2f, %.2f---velVal(x,y):%.2f, %.2f---posVal(x,y):%.2f, %.2f\n", *XForce_p, *YForce_p, *Xvel_p ,*Yvel_p, *Xpos_p, *Ypos_p);
+        fflush(stdout);
     }
 
     return 0;
@@ -117,9 +141,11 @@ double *generate_y_force(double *vect_pointer, double *force){
 }
 
 double *velocity(double Force, double initial_velocity, double *new_vel){
-    double dtime_m = 0.01, frict_k = -0.1;
+    double dtime_m = 1, frict_k = -0.1;
 
+    //printf("in -- %.2f + %f * (%.2f + %f * %.2f) --- %.2f\n", initial_velocity, dtime_m, Force, frict_k, initial_velocity, *new_vel);
     *new_vel = initial_velocity + dtime_m * (Force + frict_k * initial_velocity);
+    //printf("out-- %.2f --\n", *new_vel);
     return new_vel;
 }
 
@@ -130,3 +156,7 @@ double *position(double Velocity, double initial_position, double *new_pose){
     *new_pose = initial_position + dtime * Velocity;
     return new_pose;
 }
+
+
+
+        

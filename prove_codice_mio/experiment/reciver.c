@@ -12,9 +12,7 @@
 #include <sys/mman.h>
 #include <signal.h>
 
-#define SIGH_MSG "segnale kill ricevuto\n"
-
-void signalHandler(int signum);
+void singnalHandlerFunction(int signum);
 
 
 int main(int argc, char *argv[]){
@@ -26,83 +24,58 @@ int main(int argc, char *argv[]){
         fflush(stdout);
     }
     close(pipe_fd[1]); // chiudo scrittura
+    char ch;
 
-    int retval;
-    fd_set rfds;
-    struct timeval  tv;
+    int retVal_sel, retVal_read;
+    fd_set read_fd;
+    struct timeval sel_time;
 
-    int retval1;
-    fd_set rfds_ps;
-    struct timespec tv_ps;
+    struct sigaction sa_usr1;
+    sa_usr1.sa_handler = singnalHandlerFunction;
 
-    FD_ZERO(&rfds_ps);
-    FD_SET(0, &rfds_ps);
+    if(sigaction(SIGTERM, &sa_usr1, NULL) == -1){
+        perror("errore sigaction: ");
+    }
 
-    tv_ps.tv_sec = 0;
-    tv_ps.tv_nsec = 0;
+    while(TRUE){
+        // reinizializzo ad ogni ciclo per evitare undef value per retVal_sel == 0
+        FD_ZERO(&read_fd);
+        FD_SET(pipe_fd[0], &read_fd);
 
-    int read_control;
-    char read_ch;
+        sel_time.tv_sec = 1.0;
+        sel_time.tv_usec = 0.0;
 
-    struct sigaction kill_hand;
-    memset(&kill_hand, 0, sizeof(kill_hand));
-    kill_hand.sa_handler = signalHandler;
-    kill_hand.sa_flags = SA_RESTART;
-
-    
-
-    while((retval1 = pselect(1, &rfds_ps, NULL, NULL, &tv_ps, NULL)) >= 0){
-        printf("valore ritorno pselect: %d\n", retval1);
+        retVal_sel = select(pipe_fd[0]+1, &read_fd,  NULL, NULL, &sel_time);
+        
+        perror("controllo forzato della select: ");
+        printf("\n");
         fflush(stdout);
         
-        FD_ZERO(&rfds);
-        FD_SET(pipe_fd[0], &rfds);
-
-        tv.tv_sec = 0;
-        tv.tv_usec = 0;
-
-        retval = select(pipe_fd[0] + 1, &rfds, NULL, NULL, &tv);
-        if (retval < 0){
-            perror("errore su select: ");
-        }else if(retval == 0){
-            printf("no data to read\n");
-            
-
+        if(retVal_sel == 0){
+            printf("nessun dato sulla pipe\n");
             fflush(stdout);
         }else{
-            read_control = read(pipe_fd[0], &read_ch, 1);
-            if (read_control < 0){
-                printf("errore lettura pipe\n");
-                fflush(stdout);
+            retVal_read = read(pipe_fd[0], &ch, 1);
+            if (retVal_read < 0){
+                perror("errore lettura: ");
             }else{
-                printf("lettura avvenuta, conteggio byte: %d, valore letto: %c\n", read_control, read_ch);
+                printf("controllo byte letti: %d, controllo carattere letto: %c\n", retVal_read, ch);
                 fflush(stdout);
             }
         }
-
-
-        FD_ZERO(&rfds_ps);
-        FD_SET(0, &rfds_ps);
-
-        tv_ps.tv_sec = 0;
-        tv_ps.tv_nsec = 0;
     }
-    if (retval1 < 0){
-        perror("errore con pselect");
-    }else if(retval == EINTR){
-        if(sigaction(retval1, &kill_hand, NULL)<0){
-                perror("errore ricezione segnale");               
-            }
-    }
-        
     
 }
 
-void signalHandler(int signum){
-    if (signum == SIGKILL){
-        write(STDERR_FILENO, SIGH_MSG, sizeof(SIGH_MSG));
+void singnalHandlerFunction(int signum){
+    if (signum == SIGTERM){
+        printf("Ricevuto segnale di stop\n");
+        fflush(stdout);
+        sleep(3);
+
         exit(EXIT_SUCCESS);
     }else{
-        write(STDERR_FILENO, "errore ricezione, o messaggio sbagliato", sizeof("errore ricezione, o messaggio sbagliato"));
+        printf("Segnale diverso da SIGKILL, continuo esecuzione\n");
+        fflush(stdout);
     }
 }

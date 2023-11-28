@@ -10,9 +10,8 @@
 #include <string.h> 
 #include <semaphore.h>
 #include <sys/mman.h>
-#include<sys/wait.h>
+#include <sys/wait.h>
 #include <signal.h>
-
 
 int main(int argc, char *argv[]){
 
@@ -29,6 +28,8 @@ int main(int argc, char *argv[]){
         
         sprintf(str_pipe_fd[i], "%d", pipe_fd[i]);
     }
+
+
     
     char * arglist1[] = {"konsole", "-e","./sender", str_pipe_fd[0], str_pipe_fd[1], NULL};
     char * arglist2[] = {"konsole", "-e","./reciver", str_pipe_fd[0], str_pipe_fd[1], NULL};
@@ -51,27 +52,29 @@ int main(int argc, char *argv[]){
         }
     }
 
-    if (pid1 != 0 && pid2 != 0){
-        char pidstring[2][10];
-        sprintf(pidstring[0], "%d", pid1);
-        sprintf(pidstring[1], "%d", pid2);
+    if (pid1 != 0 && pid2 != 0){ // mi trovo nel parent process
+        char inp_ch;
+        if ((inp_ch = getchar()) == 'q'){
+            printf("sendinng signal to child\n");
+            fflush(stdout);
+            
+            printf("sending to sender: %d\n", pid1);
+            fflush(stdout);
+            if(kill(pid1, SIGTERM) <0){
+                perror("errore kill 1");
+            }
 
-        char * arglist3[] = {"kill", "-s","SIGKILL",  pidstring[0],NULL};
-        char * arglist4[] = {"kill", "-s","SIGKILL",  pidstring[1],NULL};
+            sleep(3);
 
-        int sig_cont;
-        if (getc(stdin) == 'q'){
-            execvp("kill", arglist3);
-            execvp("kill", arglist4);
+            printf("sending to reciver: %d\n", pid2);
+            fflush(stdout);
+            if(kill(pid2, SIGTERM) <0){
+                perror("errore kill 2");
+            }
+
         }
-        pid_t temp;
-        while((temp = wait(NULL)) != -1){
-            sleep(1);
-        } 
-
     }
-    
-    
+
 
     return 0;
 }
