@@ -6,9 +6,20 @@ cd ..
 # Compile the main files
 gcc -c description.c 
 
-# Compile the main files
+# compile the master
+gcc master.c -o master
+
+# compile the server
+gcc server.c -o server
+
+# compile the drone
+gcc drone.c -o drone
+
+# compile the input
+gcc input.c -o input
+
+# Compile the descriptions files
 gcc -o des description.o library/window.o -lncurses
 
-# Link all the object files
-# gcc -o des description.o library/window.o
-
+# Run the master
+./master
