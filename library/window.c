@@ -16,17 +16,17 @@ void destroy_win(WINDOW *local_win) {
     delwin(local_win); // delete the window
 }
 
-void init_windows(int Srow, int Scol, WINDOW **external_window, WINDOW **printing_window, int *PRy, int *PRx,int *Startx, int *Starty,int *Wcol, int *Wrow) {
+void init_windows(int Srow, int Scol, WINDOW **ext_win, WINDOW **print_win, int *PRy, int *PRx,int *Startx, int *Starty,int *Wcol, int *Wrow) {
     
     *Wrow = (int)(Srow * 0.8);
     *Wcol = (int)(Scol * 0.8);
     *Starty = 0; 
     *Startx = (int)((Scol - (*Wcol))/2);
-    *external_window = create_new_window(*Wrow, *Wcol, *Starty, *Startx);
+    *ext_win = create_new_window(*Wrow, *Wcol, *Starty, *Startx);
     *Wrow = (int)(Srow * 0.1);
     *Starty = Srow - (*Wrow);
-    *printing_window = create_new_window(*Wrow, *Wcol, *Starty, *Startx);
-    getmaxyx(*printing_window, *PRy, *PRx);
+    *print_win = create_new_window(*Wrow, *Wcol, *Starty, *Startx);
+    getmaxyx(*print_win, *PRy, *PRx);
     
 
     // central button creation
@@ -34,8 +34,8 @@ void init_windows(int Srow, int Scol, WINDOW **external_window, WINDOW **printin
     *Wcol = (*Wrow) * 2; 
     *Starty = (int)((Srow - (*Wrow))/2); 
     *Startx = (int)((Scol - (*Wcol))/2);
-    wrefresh(*external_window);
-    wrefresh(*printing_window);   
+    wrefresh(*ext_win);
+    wrefresh(*print_win);   
 }
 void print_btt_windows(WINDOW **win, char ch) {
     int maxX, maxY;
