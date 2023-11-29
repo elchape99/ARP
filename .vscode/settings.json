@@ -4,7 +4,9 @@
         "select.h": "c",
         "curses.h": "c",
         "window.h": "c",
-        "signal.h": "c"
+        "signal.h": "c",
+        "random": "c",
+        "stdlib.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

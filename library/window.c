@@ -9,7 +9,7 @@ WINDOW *create_new_window(int row, int col, int ystart, int xstart){
     return local_window;
 }
 
-void destroy_win(WINDOW *local_win) {
+void destroy_win(WINDOW **local_win) {
     wborder(local_win, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '); // remove the box and the window
 
     wrefresh(local_win); // show the changes
@@ -37,6 +37,7 @@ void init_windows(int Srow, int Scol, WINDOW **ext_win, WINDOW **print_win, int 
     wrefresh(*ext_win);
     wrefresh(*print_win);   
 }
+
 void print_btt_windows(WINDOW **win, char ch) {
     int maxX, maxY;
     getmaxyx(*win, maxY, maxX);
@@ -60,4 +61,58 @@ void print_btt_windows(WINDOW **win, char ch) {
         wattroff(*win, COLOR_PAIR(1) | A_BOLD);
     }
     wrefresh(*win);
+}
+
+void boxCreation(WINDOW **win, int *maxY, int *maxX) {
+    getmaxyx(*win, *maxY, *maxX);
+    box(*win, 0, 0);
+    wrefresh(*win);
+}
+
+void squareCreation (WINDOW **win, int height, int width,int *hg, int *wg)
+{
+    int heightq = height / 3;
+    int widthq = width / 3;
+
+    // Q subsquare
+    box(win[NUMWINDOWS], 0, 0);
+    mvwprintw(win[NUMWINDOWS], heightq / 2, widthq / 2, "Q");
+    wrefresh(win[NUMWINDOWS]);
+
+    // Subsquare
+    int y, x;
+    for (int i = 0; i < NUMWINDOWS - 1; ++i) {
+        y = (i / 3) * heightq + heightq;
+        x = (i % 3) * widthq;
+        win[i] = newwin(heightq, widthq, y, x);
+        box(finestre[i], 0, 0);
+        wrefresh(finestre[i]);
+    }
+    *hg = heightq;
+    *wg = widthq;
+}
+
+void lightWindow(WINDOW **win, chtype attr, int ind) {
+    
+    wattron(win[ind], attr); 
+    wrefresh(win[ind]); 
+    //usleep(1000000); 
+
+
+    wattroff(win[ind], attr); 
+    wrefresh(win[ind]);
+}
+
+void printCounter(WINDOW *win, int num) {
+    int h, w;
+    getmaxyx(win, h, w);
+
+    // Calcola le coordinate per centrare il carattere e il numero
+    int y = h / 2;
+    int x = (w - 2) / 2; // Sottrai 2 per far spazio al carattere e al numero
+
+    // Stampa il carattere e il numero al centro della finestra
+    mvwaddch(win, y, x, 'x');
+    mvwprintw(win, y, x + 1, "%d", num);
+    wrefresh(win);
 }

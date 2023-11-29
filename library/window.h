@@ -1,20 +1,11 @@
-/*
-Assicurati che il compilatore possa trovare la tua libreria e i file header. Quando compili il tuo programma, potresti dover 
-specificare il percorso della cartella delle librerie usando l'opzione -I seguita dal percorso della cartella contenente i 
-file header. Ad esempio, se stai usando il compilatore GCC, il comando potrebbe assomigliare a questo:
-
-gcc -o output_file src/main.c -I./libreria
-
-Questo comando dice al compilatore di cercare i file header nella cartella libreria mentre compila il file main.c e di 
-generare il file eseguibile output_file.
-*/
-
+// Last update: 10:00 14/11/2017
 #ifndef WINDOW_H
 #define WINDOW_H
 #include <ncurses.h>
 #include <curses.h>
 
 # define NUMWINDOWS 10
+# define NUMMOTIONS 9
 # define BTTW 0
 # define BTTE 1
 # define BTTR 2
@@ -48,9 +39,15 @@ WINDOW *down_right_butt;
 
 
 WINDOW *create_new_window(int , int , int , int );
-void destroy_win(WINDOW *local_win);
+
 void init_windows(int, int, WINDOW**, WINDOW**, int*, int*, int*, int*,int*, int*);
 void print_btt_windows(WINDOW**, char);
+void boxCreation(WINDOW **win, int *maxY, int *maxX);
+// New functions
+void destroy_win(WINDOW **local_win);
+void squareCreation (WINDOW **, int , int ,int *, int *);
+void lightWindow(WINDOW **, chtype ,int);
+void printCounter(WINDOW *, int num);
 
 
 #endif
