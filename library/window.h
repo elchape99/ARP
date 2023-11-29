@@ -3,6 +3,7 @@
 #define WINDOW_H
 #include <ncurses.h>
 #include <curses.h>
+#include <time.h>
 
 # define NUMWINDOWS 10
 # define NUMMOTIONS 9
@@ -44,10 +45,10 @@ void init_windows(int, int, WINDOW**, WINDOW**, int*, int*, int*, int*,int*, int
 void print_btt_windows(WINDOW**, char);
 void boxCreation(WINDOW **win, int *maxY, int *maxX);
 // New functions
-void destroy_win(WINDOW **local_win);
+void destroy_win(WINDOW *local_win);
 void squareCreation (WINDOW **, int , int ,int *, int *);
-void lightWindow(WINDOW **, chtype ,int);
-void printCounter(WINDOW *, int num);
+void lightWindow(WINDOW *, chtype );
+void printCounter(WINDOW *, int );
 
 
 #endif

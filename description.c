@@ -24,6 +24,7 @@ int main (int argc, char* argv[])
     WINDOW *external_window;
     WINDOW *printing_window;
     WINDOW *arrw[NUMWINDOWS];
+    // change with the new windows.c and the new functiones
     
     int Srow, Scol;
     int Wrow, Wcol, Starty, Startx;

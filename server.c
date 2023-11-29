@@ -23,12 +23,35 @@ void handle_sigusr(int sig, siginfo_t *siginfo, void *context)
 float weight = 0;
 float screw = 0; // attrito
 
+typedef struct {
+    float x;
+    float y;
+} position;
+
+typedef struct {
+    float fx;
+    float fy;
+} strength;
+
+typedef struct {
+    float vx;
+    float vy;
+} velocity;
+
 int main (int argc, char* argv[])
 {
     pid_t mpid;
-    int mfd[2];
-    float forcex = 0;
-    float forcey = 0;
+    int i,children = 2;
+    int mfd[children];
+    char* pidstr[children];
+    void* ptr;
+    int shmmid;
+    
+    strength *force;
+    velocity *vel;
+    position *pos;
+    // server con shared memory riceve tutto da drone.c e manda alla mappa 
+    // per muovere il drone 
 
     if ((pipe(mfd)) < 0) {
         perror("pipe map ncurses");
@@ -39,19 +62,69 @@ int main (int argc, char* argv[])
         perror("fork map");
         return 1;
     }
+    for (i = 0; i < children; i++) {
+        sprintf(pidstr[i], "%d", inpfd[i]);
+    }
     if (mpid == 0) {
-        char* argvm[] = {"konsole", "-e","./map", NULL};
+        char* argvm[] = {"konsole", "-e","./map",pidstr[0],pidstr[1], NULL};
         // Add maybe some arguments to argvm
-        close(mfd[1]);
-        dup2(mfd[0], STDIN_FILENO);
         execvp("konsole",argvm);
         printf("error in exec of map\n");
         return -2;
     }
     close(mfd[0]);
 
+    // Shared memory fai dalle slide del prof
 
-    
+    shmmid = shmget(KEY,sizeof(strength) + sizeof(velocity) + sizeof(position), IPC_CREAT | 0666);
+    if (shmmid == -1) {
+        printf("Shared memory failed\n");
+        return 1;
+    }
+    // ftruncate(shmmid, sizeof(message));
+    force = (strength*) shmat(shmmid, NULL, 0);
+    if ((void*) force == (*void)-1) {
+        perror("shmat");
+        return 2;
+    }
+    vel = (velocity*)(force + 1);
+    if ((void*) vel == (*void)-1) {
+        perror("shmat");
+        return 2;
+    }
+    pos = (position*)(vel + 1);
+    if ((void*) pos == (*void)-1) {
+        perror("shmat");
+        return 2;
+    }
+
+
+    ptr = mmap(0, sizeof(message), PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (ptr == MAP_FAILED) {
+        printf("Map failed\n");
+        exit(-1);
+    }
+
+
+
+
+
+
+    while (pos.x != -1 && pos.y != -1) {
+        if ((write(mfd[1], &pos, sizeof(position))) < 0) {
+            perror("write map");
+            return 3;
+        }
+        //implementare accesso a memoria condivisa con i semafori
+        // Ricorda di mettere gestione errori
+    }
+
+
+
+    shmdt(force);
+    shmdt(vel);
+    shmdt(pos);
+    shmctl(shmmid, IPC_RMID, NULL);
     close(mfd[1]);
     wait(NULL);
     return 0;

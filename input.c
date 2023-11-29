@@ -33,6 +33,7 @@ int main (int argc, char* argv[])
 {
     //pipe creation
     int inpfd[2];
+    char pidstr[2][70];
     pid_t cid;
     int ch;
     char realchar = '\0';
@@ -42,16 +43,18 @@ int main (int argc, char* argv[])
         perror("pipe input ncurses");
         return 2;
     }
+    for (int i = 0; i < 2; i++) {
+        sprintf(pidstr[i], "%d", inpfd[i]);
+    }
 
     if ((cid = fork()) == -1) {
         perror("fork");
         return 1;
     }
-    char * argcou[] = {"konsole", "-e","./inputc", NULL};
+    // here to pass the pipe
+    char * argcou[] = {"konsole", "-e","./inputc",pidstr[0], pidstr[1], NULL};
     if (cid == 0) {
-        close(inpfd[0]);
-
-        dup2(inpfd[1], STDOUT_FILENO);
+        // dup2(inpfd[1], STDOUT_FILENO);
         execvp("konsole",argcou);
         printf("error in exec of input\n");
         return -2;
@@ -76,16 +79,19 @@ int main (int argc, char* argv[])
         time_t ctime;
         time(&ctime);
         fprintf(logfile, "Input process created at %s\n with pid %n", ctime(&ctime),getpid());
+        fflush(logfile);
         fprintf(inputfile, "Input process created at %s\n with pid %n", ctime, getpid());
+        fflush(inputfile);
         fclose(logfile);
     }
+    /*
     struct sigaction sa;
     sa.sa_sigaction  = handle_sigusr;
     sa.sa_flags = SA_SIGINFO;
     if (sigaction(SIGUSR1, &sa, NULL) == -1) {
         perror("sigaction");
         return 3;
-    }
+    }*/
 
     // while to get char
     while(ch != 'Q') {
@@ -96,6 +102,9 @@ int main (int argc, char* argv[])
         if ((fprintf(inputfile, "Pressed char: %c\n", ch)) < 0) {
             perror("fprintf input ncurses");
             return 4;
+        }
+        else{
+            fflush(inputfile);
         }
     }
     fclose(inputfile);

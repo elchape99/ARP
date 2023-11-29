@@ -12,13 +12,25 @@
 #include <string.h>
 
 #define T 0.01 // Define a time constant
-double x = 0, y = 0;
-double vx = 0, vy = 0;
+typedef struct {
+    float x;
+    float y;
+} position;
 
-// Initialize forces
-double fx = 0, fy = 0;
+typedef struct {
+    float fx;
+    float fy;
+} strength;
 
-// Fai partire input da server e qua fai la mappa (quindi inverti)
+typedef struct {
+    float vx;
+    float vy;
+} velocity;
+
+float weight = 0;
+float screw = 0; // attrito
+
+// metti strutture e sistema shared memory e fi watchdog
 
 void handle_sigusr(int sig, siginfo_t *siginfo, void *context)
 {
@@ -34,5 +46,23 @@ void handle_sigusr(int sig, siginfo_t *siginfo, void *context)
 
 int main (int argc, char* argv[])
 {
+    // crea pieps da master e mantieni tra input e drone soltanto
+    int shmmid; 
+    strength *force;
+    velocity *vel;
+    position *pos;
 
+    if ((shmmid = shmget(IPC_PRIVATE, sizeof(position), 0666)) < 0) {
+        perror("shmget drone side");
+        return 1;
+    }
+
+    // closing the file descriptor
+
+    
+    // Deallocating the shared memory
+    shmdt(pos);
+    shmdt(vel);
+    shmdt(force);
+    return 0;
 }

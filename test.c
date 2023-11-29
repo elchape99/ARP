@@ -21,7 +21,7 @@ void counterImplementation (int *cnt, char ct, int lung);
 int main (int argc, char* argv[])
 {
     WINDOW *cwin[NUMWINDOWS];
-    int counter[4] = {0,0,0,0}; // s, e, f, c
+    int counter[4]; // s, e, f, c
     char realchar = '\0';
     int lng = 4;
     int ch;
@@ -32,59 +32,60 @@ int main (int argc, char* argv[])
     for (i = 0; i < argc; i++) {
         pipe[i] = atoi(argv[i]); // converts from the string to the integer
     }
-    close(pipe[0]);
+    close(pipe[0]);*/
 #endif
     initscr();
-    raw();
+    cbreak();
     noecho();
-    start_color();
-    keypad(stdscr, TRUE);
-    
 
     int hight, width;
     int shight, swidth;
     getmaxyx(stdscr, hight, width);
-    refresh();
     init_pair(1, COLOR_YELLOW, COLOR_BLACK);
 
     // Calcola le dimensioni per i sottoquadrati
     squareCreation(cwin, hight, width, &shight, &swidth); //giving the array
-    //mvwprintw(cwin[BTTW],0,0,"Scompaiono adesso");
-    wrefresh(cwin[BTTW]);
-    //sleep(1);
+
+
     // while to get char
     while (1) {
         ch = getch();
-        realchar = (char) ch;
-        //mvwprintw(cwin[BTTW],0,0,"Scompaiono fienstre");
-        wrefresh(cwin[BTTW]);
+
         switch (ch)
         {
-        case 'w': // up left
+        case 'w':
+            realchar = 'w'; // up left
             index = BTTW;
             break;
-        case 'e': // up
+        case 'e':
+            realchar = 'e'; // up
             index = BTTE;
             break;
-        case 'r': // up right
+        case 'r':
+            realchar = 'r'; // up right
             index = BTTR;
             break;
-        case 's': // left
+        case 's':
             index = BTTS;
             break;
-        case 'd': // delete forces
+        case 'd':
+            realchar = 'd'; // delete forces
             index = BTTD;
             break;
-        case 'f': // right
+        case 'f':
+            realchar = 'f'; // right
             index = BTTF;
             break;
-        case 'x': // Down left
+        case 'x':
+            realchar = 'x'; // Down left
             index = BTTX;
             break;
-        case 'c': // Down
+        case 'c':
+            realchar = 'c'; // Down
             index = BTTC;
             break;
-        case 'v': // down Right
+        case 'v':
+            realchar = 'v'; // down Right
             index = BTTV;
             break;
         case 'p':
@@ -95,7 +96,6 @@ int main (int argc, char* argv[])
             break;
         case 'q':
             realchar = 'Q'; // Termina il programma
-            index = BTTQ;
             mvprintw(0, 0, "Closing the program\n");
             sleep(3);
             break;
@@ -105,18 +105,17 @@ int main (int argc, char* argv[])
         }
 
         counterImplementation(counter, realchar, lng);
-        //lightWindow(cwin[index], COLOR_PAIR(1) | A_BOLD);
+        lightWindow(cwin, COLOR_PAIR(1) | A_BOLD, index);
         printCounter(cwin[BTTS], counter[0]);
         printCounter(cwin[BTTE], counter[1]);
         printCounter(cwin[BTTF], counter[2]);
         printCounter(cwin[BTTC], counter[3]);
-        for (i = 0; i < NUMWINDOWS; i++) {
-            wrefresh(cwin[i]);
-        }   
+        wrefresh(cwin);
+
         // pipe construction
         if (realchar != '\0') {
-#ifndef DEBUG
             //write in the pipe
+#ifndef DEBUG
             if ((write(pipe[1],&realchar,sizeof(char))) < 0) {
                 perror("error writing on input")
                 return 3;
@@ -133,10 +132,11 @@ int main (int argc, char* argv[])
     }
 #ifndef DEBUG
     // closing all the pipes
-    close (pipe[1]);
+        close (pipe[1]);
 #endif
+
     for (i = 0; i < NUMWINDOWS; i++) {
-        destroy_win(cwin[i]);
+        destroy_win(&cwin[i]);
     }   
     endwin();
     return 0;
@@ -145,7 +145,6 @@ int main (int argc, char* argv[])
 
 void counterImplementation (int *cnt, char ct, int lung)
 {
-    printw("Char: %c\n", ct);
     if (ct == 'w' || ct == 'e'|| ct == 'r')
     {
         if (cnt[1] < MAX )
@@ -194,7 +193,7 @@ void counterImplementation (int *cnt, char ct, int lung)
     {
        for (int i = 0; i < lung; i++)
         {
-            cnt[i] = 0;
+            counter[i] = 0;
         }
     }
 }

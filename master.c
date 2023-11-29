@@ -50,6 +50,7 @@ int main ()
     pid_t pid_des;
    
     //Inizialize the log file, inizialize with mode w, all the data inside will be delete
+    // implements the pipe such as the code vault ones using the new part from Andrea
     
     FILE *logfile = fopen("logfile.txt", "w");
     if(logfile < 0){ //if problem opening file, send error
