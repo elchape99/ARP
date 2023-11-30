@@ -26,7 +26,7 @@ typedef struct Position { // se problemi togli Position e anche gli altri
     int y;
 } position;
 
-#ifndef DEBUG
+// #ifndef DEBUG
 void sigusr1Handler(int signum, siginfo_t *info, void *context) {
     if (signum == SIGUSR1){
         /*send a signal SIGUSR2 to watchdog */
@@ -34,6 +34,7 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context) {
         kill(info->si_pid, SIGUSR2);
     }
 }
+// endif
 /*
 typedef struct Strenght{
     float fx;
@@ -45,7 +46,7 @@ typedef struct Velocity {
     float vy;
 } velocity;
 */
-#endif
+
 
 int main (int argc, char* argv[])
 {
@@ -87,7 +88,7 @@ int main (int argc, char* argv[])
     }
 
 
-#ifndef DEBUG
+// #ifndef DEBUG
     if ((pipe(mfd)) < 0) {
         perror("pipe map ncurses");
         return 2;
@@ -143,7 +144,7 @@ int main (int argc, char* argv[])
     }*/
 
 // this is a good condition for the loop, but probably x and y can be negative
-    while (pos.x != -1000 && pos.y != -1000) {
+    while (pos->x != -1000 && pos->y != -1000) {
         // axcess to the drone data
         struct sembuf sb; // Acquiring the semaphore
         sb.sem_num = 0;
@@ -179,7 +180,7 @@ int main (int argc, char* argv[])
     close(mfd[1]);
     wait(NULL);
 
-#endif
+// #endif
 
     return 0;
 }

@@ -5,7 +5,7 @@
 #include <curses.h>
 #include <time.h>
 
-# define NUMWINDOWS 10
+# define NUMWINDOWS 11
 # define NUMMOTIONS 9
 # define BTTW 0
 # define BTTE 1
@@ -16,7 +16,9 @@
 # define BTTX 6
 # define BTTC 7
 # define BTTV 8
-# define BTTQ 9
+# define BTTB 9
+# define BTTQ 10
+
 
 
 
@@ -39,10 +41,10 @@ WINDOW *down_right_butt;
 */
 
 
-WINDOW *create_new_window(int , int , int , int );
+// WINDOW *create_new_window(int , int , int , int );
 
-void init_windows(int, int, WINDOW**, WINDOW**, int*, int*, int*, int*,int*, int*);
-void print_btt_windows(WINDOW**, char);
+// void init_windows(int, int, WINDOW**, WINDOW**, int*, int*, int*, int*,int*, int*);
+void print_btt_windows(WINDOW*, char);
 void boxCreation(WINDOW **win, int *maxY, int *maxX);
 // New functions
 void destroy_win(WINDOW *local_win);

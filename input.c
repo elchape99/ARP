@@ -19,16 +19,16 @@ Acquired all the char and sends to the drone through pipes
 
 #define DEBUG 1
 
-#ifndef DEBUG
+//v#ifndef DEBUG
 //managing signal
 void sigusr1Handler(int signum, siginfo_t *info, void *context) {
     if (signum == SIGUSR1){
         /*send a signal SIGUSR2 to watchdog */
-        wd = info->si_pid;
+        // wd = info->si_pid;
         kill(info->si_pid, SIGUSR2);
     }
 }
-#endif
+// #endif
 
 int main (int argc, char* argv[])
 {
@@ -41,6 +41,16 @@ int main (int argc, char* argv[])
     int counter[NUMMOTIONS];
     FILE *inputfile;
 
+    inputfile = fopen("input.txt", "w");
+    if (inputfile == NULL)
+    {
+        perror("Error opening file! input\n");
+        return 1;
+        //exit(1);
+    }
+    fprintf(inputfile, "input created\n");
+    fclose(inputfile);
+
     //configure the handler for sigusr1
     struct sigaction sa_usr1;
     sa_usr1.sa_sigaction = sigusr1Handler;
@@ -52,17 +62,8 @@ int main (int argc, char* argv[])
     }
 
     //create input file
-    inputfile = fopen("input.txt", "w");
-    if (inputfile == NULL)
-    {
-        perror("Error opening file!\n");
-        return 1;
-        //exit(1);
-    }
-    fprintf(inputfile, "input created\n");
-    fclose(inputfile);
 
-#ifndef DEBUG
+// #ifndef DEBUG
     // opening pipe
     if (pipe(inpfd) < 0) {
         perror("pipe input ncurses");
@@ -89,23 +90,23 @@ int main (int argc, char* argv[])
     // Doing input process
     int pinpdrone[2];
     FILE *logfile = fopen("logfile.txt", "a");
-    FILE *inputfile = fopen("input.txt", "w");
+    inputfile = fopen("input.txt", "a");
 
     if (logfile < 0) { //if problem opening file, send error
         perror("fopen: logfile");
         return 1;
     }
-    if (inputfile < 0) { //if problem opening file, send error
+    /*if (inputfile < 0) { //if problem opening file, send error
         perror("fopen: inputfile");
         return 2;
-    }
+    }/*/
     else {
         //wtite in logfile
-        time_t ctime;
-        time(&ctime);
-        fprintf(logfile, "Input process created at %s\n with pid %n", ctime(&ctime),getpid());
+        time_t crttime;
+        time(&crttime);
+        fprintf(logfile, "Input process created at %s\n with pid %d\n", ctime(&crttime),getpid());
         fflush(logfile);
-        fprintf(inputfile, "Input process created at %s\n with pid %n", ctime, getpid());
+        fprintf(inputfile, "Input process created at %s\n with pid %d\n", ctime(&crttime), getpid());
         fflush(inputfile);
         fclose(logfile);
     }
@@ -151,6 +152,6 @@ int main (int argc, char* argv[])
 
 
     wait(NULL); // wait for the child to terminate
-#endif
+// #endif
     return 0;
 }

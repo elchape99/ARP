@@ -13,7 +13,7 @@
 #include <ncurses.h>
 #include "library/window.h"
 
-// #define DEBUG 1
+ #define DEBUG 1
 
 #define MAX 6
 void counterImplementation (int *cnt, char ct, int lung);
@@ -28,12 +28,12 @@ int main (int argc, char* argv[])
     int i;
     int index = 0;
     int pipefd[argc];
-#ifndef DEBUG
+// #ifndef DEBUG
     for (i = 0; i < argc; i++) { // something is wrong here
         pipefd[i] = atoi(argv[i]); // converts from the string to the integer
     }
     close(pipefd[0]);
-#endif
+// #endif
     initscr();
     raw();
     noecho();
@@ -92,6 +92,7 @@ int main (int argc, char* argv[])
             break;
         case 'b':
             realchar = 'b'; // break
+            index = BTTB;
             break;
         case 'q':
             realchar = 'Q'; // Termina il programma
@@ -115,13 +116,13 @@ int main (int argc, char* argv[])
         }   
         // pipe construction
         if (realchar != '\0') {
-#ifndef DEBUG
+// #ifndef DEBUG
             //write in the pipe
             if ((write(pipefd[1],&realchar,sizeof(char))) < 0) {
                 perror("error writing on input");
                 return 3;
             }
-#endif
+// #endif
             if (realchar == 'Q') {
                 clear();
                 printw("Closing the program\n");
@@ -131,10 +132,10 @@ int main (int argc, char* argv[])
             }
         } 
     }
-#ifndef DEBUG
+//#ifndef DEBUG
     // closing all the pipes
     close (pipefd[1]);
-#endif
+//#endif
     for (i = 0; i < NUMWINDOWS; i++) {
         destroy_win(cwin[i]);
     }   
@@ -145,7 +146,7 @@ int main (int argc, char* argv[])
 
 void counterImplementation (int *cnt, char ct, int lung)
 {
-    printw("Char: %c\n", ct);
+    // printw("Char: %c\n", ct);
     if (ct == 'w' || ct == 'e'|| ct == 'r')
     {
         if (cnt[1] < MAX )

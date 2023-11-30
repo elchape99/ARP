@@ -11,8 +11,10 @@
 #include <signal.h>
 #include <string.h>
 #include <sys/sem.h>
+#include <sys/shm.h>
 
 #define T 0.01 // Define a time constant
+
 #define SEM_KEY 1234  // Chiave per i semafori
 #define SHM_KEY 5678  // Chiave per la memoria condivisa
 #define DEBUG 1
@@ -35,7 +37,7 @@ float weight = 0;
 float screw = 0; // attrito
 
 // metti strutture e sistema shared memory e fi watchdog
-#ifndef DEBUG
+//#ifndef DEBUG
 void droneMotion (int* x, int* y);
 
 void sigusr1Handler(int signum, siginfo_t *info, void *context) {
@@ -44,7 +46,7 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context) {
         kill(info->si_pid, SIGUSR2);
     }
 }
-#endif
+// #endif
 // Necessaria implementare una pipe per mandare il carattere al drone
 // Necessario sistemare il watchdog
 
@@ -63,7 +65,7 @@ int main (int argc, char* argv[])
     dronefile = fopen("drone.txt", "w");
     if (dronefile == NULL)
     {
-        perror("Error opening file!\n");
+        perror("Error opening file drone!\n");
         return 1;
         //exit(1);
     }
@@ -80,7 +82,7 @@ int main (int argc, char* argv[])
         return -1;
     }
 
-#ifndef DEBUG
+// #ifndef DEBUG
 
     // pipe computation (close writing)
     for (int i = 0; i < 2; i++) {
@@ -149,6 +151,6 @@ int main (int argc, char* argv[])
     }
     //shmdt(vel);
     //shmdt(force);
-#endif
+// #endif
     return 0;
 }

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-
+/*
 WINDOW *create_new_window(int row, int col, int ystart, int xstart){
     WINDOW *local_window = newwin(row, col, ystart, xstart);
     box(local_window, 0, 0);
@@ -11,12 +11,14 @@ WINDOW *create_new_window(int row, int col, int ystart, int xstart){
     wrefresh(local_window);
     return local_window;
 }
+*/
 
 void destroy_win(WINDOW *local_win) {
     werase(local_win); // Clear window content
     wrefresh(local_win); // Refresh to show changes
     delwin(local_win); // Delete the window
 }
+/*
 
 void init_windows(int Srow, int Scol, WINDOW **ext_win, WINDOW **print_win, int *PRy, int *PRx,int *Startx, int *Starty,int *Wcol, int *Wrow) {
     
@@ -39,30 +41,26 @@ void init_windows(int Srow, int Scol, WINDOW **ext_win, WINDOW **print_win, int 
     wrefresh(*ext_win);
     wrefresh(*print_win);   
 }
+*/
 
-void print_btt_windows(WINDOW **win, char ch) {
+void print_btt_windows(WINDOW *win, char ch) {
     int maxX, maxY;
-    getmaxyx(*win, maxY, maxX);
+    getmaxyx(win, maxY, maxX);
     start_color();
     
-    if (ch == 'Q') {
-        init_pair(2, COLOR_RED, COLOR_BLACK);
-        wattron(*win, COLOR_PAIR(2) | A_BOLD);
-    }
-    else {
-        init_pair(1, COLOR_WHITE, COLOR_BLACK);
-        wattron(*win, COLOR_PAIR(1) | A_BOLD);
-    }
+    init_pair(1, COLOR_GREEN, COLOR_BLACK);
+    wattron(win, COLOR_PAIR(1) | A_BOLD);
+
     
-    mvwaddch(*win,(int) ((maxY) / 2), (int) ((maxX - 1) / 2), ch);
-    
-    if (ch == 'Q') {
+    mvwaddch(win,(int) ((maxY) / 2), (int) ((maxX - 1) / 2), ch);
+    /**    if (ch == 'Q') {
         wattroff(*win, COLOR_PAIR(2) | A_BOLD);
     }
     else {
         wattroff(*win, COLOR_PAIR(1) | A_BOLD);
     }
-    wrefresh(*win);
+    */
+    wrefresh(win);
 }
 
 void boxCreation(WINDOW **win, int *maxY, int *maxX) {
@@ -73,20 +71,29 @@ void boxCreation(WINDOW **win, int *maxY, int *maxX) {
 
 void squareCreation(WINDOW **win, int height, int width, int *hg, int *wg)
  {
-    int heightq = height / 3;
-    int widthq = width / 3;
+    int heightq = height / 5;
+    int widthq = width / 5;
+    start_color();
+
+    init_pair (3, COLOR_RED, COLOR_BLACK);
 
     // Q subsquare
-    win[NUMWINDOWS - 1] = newwin(heightq, widthq, 0, 0);
-    box(win[NUMWINDOWS - 1], 0, 0);
-    mvwprintw(win[NUMWINDOWS - 1], heightq / 2, widthq / 2, "Q");
-    wrefresh(win[NUMWINDOWS - 1]);
+    win[BTTQ] = newwin(heightq, widthq, heightq, 0);
+    box(win[BTTQ], 0, 0);
+    mvwprintw(win[BTTQ], heightq / 2, widthq / 2, "Q");
+    wattron(win[BTTQ], COLOR_PAIR(3) | A_BOLD);
+    wrefresh(win[BTTQ]);
+    win[BTTB] = newwin(heightq, widthq, (height - 2 * heightq), (width - widthq));
+    box(win[BTTB], 0, 0);
+    mvwprintw(win[BTTB], heightq / 2, widthq / 2, "B");
+    wattron(win[BTTB], COLOR_PAIR(3) | A_BOLD);
+    wrefresh(win[BTTB]);
     //sleep(1);
     // Subsquare
     int y, x;
-    for (int i = 0; i < NUMWINDOWS - 1; ++i) {
-        y = (i / 3) * heightq;
-        x = (i % 3) * widthq;
+    for (int i = 0; i < NUMMOTIONS; ++i) {
+        y = (i / 3) * heightq + heightq;
+        x = (i % 3) * widthq + widthq;
         win[i] = newwin(heightq, widthq, y, x);
         box(win[i], 0, 0);
         wrefresh(win[i]);

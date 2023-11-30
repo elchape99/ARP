@@ -4,4 +4,7 @@ gcc -c window.c
 cd ..
 # Compile the main files
 gcc -c inputcou.c
+gcc -c description.c 
+
 gcc -o inputc inputcou.o library/window.o -lncurses
+gcc -o description description.o library/window.o -lncurses

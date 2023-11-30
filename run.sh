@@ -1,4 +1,4 @@
-rm -f ./master ./drone ./input ./server ./watchdog ./inputc ./des ./map 
+rm -f ./master ./drone ./input ./server ./watchdog ./inputc ./description ./map 
 
 # compile library
 cd library/
@@ -26,9 +26,9 @@ gcc input.c -o input
 gcc watchdog.c -o watchdog
 
 # Compile the descriptions files
-gcc -o des description.o library/window.o -lncurses
+gcc -o description description.o library/window.o -lncurses
 gcc -o inputc inputcou.o library/window.o -lncurses
 gcc -o map map.o library/window.o -lncurses
 
 # Run the master
-./master
+#./master

@@ -14,7 +14,7 @@
 #include <sys/wait.h>
 #include <stdarg.h>
 
-#define NUMPROCESS 3
+#define NUMPROCESS 4
 #define SERVER 0
 #define DRONE 1
 #define INPUT 2
@@ -97,7 +97,7 @@ int main ()
     }
     if (pid_des == 0) {
         // child description process
-        char * argdes[] = {"konsole", "-e","./des", NULL};
+        char * argdes[] = {"konsole", "-e","./description", NULL};
         if (execvp("konsole", argdes) == -1){
             perror("exec failed");
             return -1;
@@ -108,6 +108,7 @@ int main ()
     }
     //Now we start the game, so it is needed to create all
     sleep(2);
+
     for (i = 0; i < NUMPROCESS + 1; i++) {
         if (pipe(pipesfd[i]) == -1) {
             perror("pipe");
@@ -132,7 +133,7 @@ int main ()
     sprintf(pidstr[INPUT], "%d", pipesfd[INPUT][1]);
 
     char * argdrone[] = {pidstr[DRONE],pidstr[INPUT],NULL};
-    pid[DRONE] = newprocess(DRONE, "./drone", &argdrone);
+    pid[DRONE] = newprocess(DRONE, "./drone", argdrone);
     sprintf(pidstr[INPUT], "%d", pipesfd[DRONE][0]);
     sprintf(pidstr[0], "%d", pipesfd[NUMPROCESS][1]);
 
