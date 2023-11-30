@@ -11,7 +11,7 @@
 #include <signal.h>
 #include <string.h>
 
-#define NUMPROCESS 4
+#define NUMPROCESS 3
 #define SERVER 0
 #define DRONE 1
 #define INPUT 2
@@ -42,7 +42,7 @@ int newprocess (int num, char* pname, char** arglist[])
 
 int main ()
 {
-    int pipes[NUMPROCESS][2];
+    int pipesfd[NUMPROCESS + 1][2]; // not consideing the pipe of wd
     int i;
     int waitpid[NUMPROCESS];
     pid_t pid[NUMPROCESS]; // child pids
@@ -83,14 +83,36 @@ int main ()
         wait(NULL);
     }
     //Now we start the game, so it is needed to create all
+    sleep(2);
+    for (i = 0; i < NUMPROCESS + 1; i++) {
+        if (pipe(pipesfd[i]) == -1) {
+            perror("pipe");
+            printf("error in pipe %d\n",i);
+            return 2;
+        }
+    }
+    // IT's temporary because of the shared memory
+    for (i = 0; i < NUMPROCESS + 1; i++) {
+        if (i != DRONE || i != INPUT) {
+            close(pipesfd[i][0]);
+        }
+        if (i != DRONE || i != NUMPROCESS) {
+            close(pipesfd[i][1]);
+        }
+    }
 
     char * argserver[] = {NULL};
     pid[SERVER] = newprocess(SERVER, "./server", &argserver);
+    // Now it's needed to give the pipes to input and drone
+    sprintf(pidstr[DRONE], "%d", pipesfd[DRONE][0]);
+    sprintf(pidstr[INPUT], "%d", pipesfd[INPUT][1]);
 
-    char * argdrone[] = {NULL};
+    char * argdrone[] = {pidstr[DRONE],pidstr[INPUT],NULL};
     pid[DRONE] = newprocess(DRONE, "./drone", &argdrone);
+    sprintf(pidstr[INPUT], "%d", pipesfd[DRONE][0]);
+    sprintf(pidstr[0], "%d", pipesfd[NUMPROCESS][1]);
 
-    char * arginput[] = {NULL};
+    char * arginput[] = {pidstr[DRONE],pidstr[INPUT],NULL};
     pid[INPUT] = newprocess(INPUT, "./input", &arginput);
 
     sleep(1);
@@ -102,8 +124,11 @@ int main ()
     char * argwatchdog[] = {pidstr[SERVER], pidstr[DRONE], pidstr[INPUT], NULL};
     pid[WATCHDOG] = newprocess(WATCHDOG, "./watchdog", &argwatchdog);
 
-     
-
+    // just for now
+    close (pipesfd[NUMPROCESS][1]);
+    close (pipesfd[INPUT][0]);
+    close (pipesfd[DRONE][0]);
+    close (pipesfd[INPUT][1]);
 
 
     for (i = 0; i< NUMPROCESS; i++) {

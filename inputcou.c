@@ -13,7 +13,7 @@
 #include <ncurses.h>
 #include "library/window.h"
 
-#define DEBUG 1
+// #define DEBUG 1
 
 #define MAX 6
 void counterImplementation (int *cnt, char ct, int lung);
@@ -27,12 +27,12 @@ int main (int argc, char* argv[])
     int ch;
     int i;
     int index = 0;
-    int pipe[argc];
+    int pipefd[argc];
 #ifndef DEBUG
-    for (i = 0; i < argc; i++) {
-        pipe[i] = atoi(argv[i]); // converts from the string to the integer
+    for (i = 0; i < argc; i++) { // something is wrong here
+        pipefd[i] = atoi(argv[i]); // converts from the string to the integer
     }
-    close(pipe[0]);
+    close(pipefd[0]);
 #endif
     initscr();
     raw();
@@ -117,8 +117,8 @@ int main (int argc, char* argv[])
         if (realchar != '\0') {
 #ifndef DEBUG
             //write in the pipe
-            if ((write(pipe[1],&realchar,sizeof(char))) < 0) {
-                perror("error writing on input")
+            if ((write(pipefd[1],&realchar,sizeof(char))) < 0) {
+                perror("error writing on input");
                 return 3;
             }
 #endif
@@ -133,7 +133,7 @@ int main (int argc, char* argv[])
     }
 #ifndef DEBUG
     // closing all the pipes
-    close (pipe[1]);
+    close (pipefd[1]);
 #endif
     for (i = 0; i < NUMWINDOWS; i++) {
         destroy_win(cwin[i]);

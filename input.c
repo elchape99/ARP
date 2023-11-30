@@ -38,6 +38,7 @@ int main (int argc, char* argv[])
     int ch;
     char realchar = '\0';
     int counter[NUMMOTIONS];
+
     // opening pipe
     if (pipe(inpfd) < 0) {
         perror("pipe input ncurses");
@@ -62,7 +63,7 @@ int main (int argc, char* argv[])
     // closing write
     close(inpfd[1]);
     // Doing input process
-    int inpdrone[2];
+    int pinpdrone[2];
     FILE *logfile = fopen("logfile.txt", "a");
     FILE *inputfile = fopen("input.txt", "w");
 
@@ -92,11 +93,20 @@ int main (int argc, char* argv[])
         perror("sigaction");
         return 3;
     }*/
+    // opening pipe
+    for (int i = 0; i < 2; i++) {
+        pinpdrone[i] = atoi(argv[i]); // converts from the string to the integer
+    }
+    close(pinpdrone[0]);
 
     // while to get char
     while(ch != 'Q') {
         if ((read(inpfd[0], &ch, sizeof(char))) < 0) {
             perror("read input ncurses");
+            return 3;
+        }
+        if ((write(pinpdrone[1], &ch, sizeof(char))) < 0) {
+            perror("write input ncurses");
             return 3;
         }
         if ((fprintf(inputfile, "Pressed char: %c\n", ch)) < 0) {
@@ -110,6 +120,7 @@ int main (int argc, char* argv[])
     fclose(inputfile);
     // closing read
     close(inpfd[0]);
+    close(pinpdrone[1]);
 
     // Managing signal for the watchdog //work in progress
     

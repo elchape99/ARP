@@ -1,4 +1,4 @@
-rm -f ./master ./drone ./input ./server ./watchdog ./inputc ./des
+rm -f ./master ./drone ./input ./server ./watchdog ./inputc ./des ./map 
 
 # compile library
 cd library/
@@ -8,6 +8,7 @@ cd ..
 # Compile the main files
 gcc -c description.c 
 gcc -c inputcou.c
+gcc -c map.c
 
 # compile the master
 gcc master.c -o master
@@ -21,11 +22,13 @@ gcc drone.c -o drone
 # compile the input
 gcc input.c -o input
 
+# compile the watchdog
 gcc watchdog.c -o watchdog
 
 # Compile the descriptions files
 gcc -o des description.o library/window.o -lncurses
 gcc -o inputc inputcou.o library/window.o -lncurses
+gcc -o map map.o library/window.o -lncurses
 
 # Run the master
 ./master
