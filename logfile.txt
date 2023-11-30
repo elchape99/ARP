@@ -1,0 +1,27 @@
+Thu Nov 30 09:52:26 2023
+ => create master with pid 8112
+Thu Nov 30 09:52:34 2023
+ => process 8180 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process 8181 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process 8180 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process 8180 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process 8181 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process 8182 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process 8184 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process 8186 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process 8180 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process 8183 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process 8185 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process 8183 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOGThu Nov 30 09:52:34 2023
+ => process -2 is closed by WATCHDOG

@@ -1,15 +1,18 @@
-#include <stdio.h>
+#include <stdio.h> 
 #include <stdlib.h>
-#include <unistd.h>
-#include <sys/wait.h>
 #include <sys/types.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <time.h>
+#include <unistd.h> 
+#include <string.h> 
+#include <fcntl.h> 
+#include <sys/stat.h> 
+#include <sys/types.h> 
+#include <sys/select.h>
+#include <semaphore.h>
+#include <sys/mman.h>
 #include <signal.h>
-#include <string.h>
+#include <time.h>
+#include <sys/wait.h>
+#include <stdarg.h>
 
 #define NUMPROCESS 3
 #define SERVER 0
@@ -38,6 +41,27 @@ int newprocess (int num, char* pname, char** arglist[])
         }
     }
 }
+/*
+void writeLog(const char *format, ...) {
+    
+    FILE *logfile = fopen("logfile.txt", "a");
+    if (logfile < 0) {
+        perror("Error opening logfile");
+        exit(EXIT_FAILURE);
+    }
+    va_list args;
+    va_start(args, format);
+
+    time_t current_time;
+    time(&current_time);
+
+    fprintf(logfile, "%s => ", ctime(&current_time));
+    vfprintf(logfile, format, args);
+
+    va_end(args);
+    fflush(logfile);
+}
+*/
 
 
 int main ()
@@ -58,10 +82,10 @@ int main ()
         return 1;
     }else{
         //wtite in logfile
-        time_t ctime;
+        time_t crtime;
         //obtain local time
-        time(&current_time);
-        fprintf(logfile, "%s => create master with pid %d\n", ctime(&ctime), getpid());
+        time(&crtime);
+        fprintf(logfile, "%s => create master with pid %d\n", ctime(&crtime), getpid());
         fclose(logfile);
     }
     // now we start showing the description of th game
@@ -73,7 +97,7 @@ int main ()
     }
     if (pid_des == 0) {
         // child description process
-        char * argdes[] = {"konsole", "-e","./description", NULL};
+        char * argdes[] = {"konsole", "-e","./des", NULL};
         if (execvp("konsole", argdes) == -1){
             perror("exec failed");
             return -1;
@@ -102,7 +126,7 @@ int main ()
     }
 
     char * argserver[] = {NULL};
-    pid[SERVER] = newprocess(SERVER, "./server", &argserver);
+    pid[SERVER] = newprocess(SERVER, "./server", argserver);
     // Now it's needed to give the pipes to input and drone
     sprintf(pidstr[DRONE], "%d", pipesfd[DRONE][0]);
     sprintf(pidstr[INPUT], "%d", pipesfd[INPUT][1]);
@@ -113,7 +137,7 @@ int main ()
     sprintf(pidstr[0], "%d", pipesfd[NUMPROCESS][1]);
 
     char * arginput[] = {pidstr[DRONE],pidstr[INPUT],NULL};
-    pid[INPUT] = newprocess(INPUT, "./input", &arginput);
+    pid[INPUT] = newprocess(INPUT, "./input", arginput);
 
     sleep(1);
 
@@ -122,7 +146,7 @@ int main ()
     }
 
     char * argwatchdog[] = {pidstr[SERVER], pidstr[DRONE], pidstr[INPUT], NULL};
-    pid[WATCHDOG] = newprocess(WATCHDOG, "./watchdog", &argwatchdog);
+    pid[WATCHDOG] = newprocess(WATCHDOG, "./watchdog", argwatchdog);
 
     // just for now
     close (pipesfd[NUMPROCESS][1]);
@@ -130,10 +154,22 @@ int main ()
     close (pipesfd[DRONE][0]);
     close (pipesfd[INPUT][1]);
 
-
-    for (i = 0; i< NUMPROCESS; i++) {
-        waitpid[i] = waitpid(pid[i],NULL,0);
-        printf("process %d terminated\n",i);
+    pid_t waitResult;
+    int status;
+    for (i = 0; i <= NUMPROCESS; i++)
+    {/*
+        waitResult = waitpid(pid[i], &status, 0);
+        if(waitResult == -1){
+            perror("waitpid:");
+            return 3;
+        }
+        if (WIFEXITED(status)) {
+            printf("Process %d is termined with status %d\n", i, WEXITSTATUS(status));
+        } else {
+            printf("Iprocess %d is termined with anomaly\n", i);
+        }
+        */
+       wait(NULL);
     }
     return 0;
 }

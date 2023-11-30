@@ -10,6 +10,7 @@
 #include <time.h>
 #include <signal.h>
 #include <string.h>
+#include <sys/sem.h>
 
 #define T 0.01 // Define a time constant
 #define SEM_KEY 1234  // Chiave per i semafori
@@ -34,18 +35,16 @@ float weight = 0;
 float screw = 0; // attrito
 
 // metti strutture e sistema shared memory e fi watchdog
+#ifndef DEBUG
+void droneMotion (int* x, int* y);
 
-void droneMotion (int* x, int y);
-
-void handle_sigusr(int sig, siginfo_t *siginfo, void *context)
-{
-    printf("Signal %d received from process %d\n", sig, siginfo->si_pid);
-    if (sig == SIGUSR1) {
-        watchdog = siginfo->si_pid;
-        kill(siginfo->si_pid, SIGUSR2) //send signal to the watchdog
+void sigusr1Handler(int signum, siginfo_t *info, void *context) {
+    if (signum == SIGUSR1){
+        /*send a signal SIGUSR2 to watchdog */
+        kill(info->si_pid, SIGUSR2);
     }
-    
 }
+#endif
 // Necessaria implementare una pipe per mandare il carattere al drone
 // Necessario sistemare il watchdog
 
@@ -59,6 +58,29 @@ int main (int argc, char* argv[])
     velocity vel;
     position *pos;
     int pfd[2]; // posso sostituire con argc?
+    FILE *dronefile;
+
+    dronefile = fopen("drone.txt", "w");
+    if (dronefile == NULL)
+    {
+        perror("Error opening file!\n");
+        return 1;
+        //exit(1);
+    }
+    fprintf(dronefile, "drone created\n");
+    fclose(dronefile);
+    
+    //configure the handler for sigusr1
+    struct sigaction sa_usr1;
+    sa_usr1.sa_sigaction = sigusr1Handler;
+    sa_usr1.sa_flags = SA_SIGINFO;
+
+    if (sigaction(SIGUSR1, &sa_usr1, NULL) == -1){ 
+        perror("sigaction");
+        return -1;
+    }
+
+#ifndef DEBUG
 
     // pipe computation (close writing)
     for (int i = 0; i < 2; i++) {
@@ -127,5 +149,6 @@ int main (int argc, char* argv[])
     }
     //shmdt(vel);
     //shmdt(force);
+#endif
     return 0;
 }

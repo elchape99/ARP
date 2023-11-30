@@ -1,14 +1,3 @@
-//managing signal
-/*
-void handle_sigusr(int sig, siginfo_t *siginfo, void *context)
-{
-    printf("Signal %d received from process %d\n", sig, siginfo->si_pid);
-    if (sig == SIGUSR1) {
-        watchdog = siginfo->si_pid;
-        kill(siginfo->si_pid, SIGUSR2) //send signal to the watchdog
-    }
-    
-}*/
 #include <stdio.h> 
 #include <string.h> 
 #include <fcntl.h> 
@@ -22,6 +11,8 @@ void handle_sigusr(int sig, siginfo_t *siginfo, void *context)
 #include <signal.h> 
 #include <time.h>
 #include <stdarg.h>
+
+#define DEBUG 1
 
 void writeLog(const char *format, ...) {
     
@@ -52,6 +43,8 @@ when wd send kill counter ++
 
 int counter = 0;
 
+//#ifndef DEBUG
+
 /*signal hadler function*/
 void sigusr2Handler(int signum, siginfo_t *info, void *context) {
     if(signum == SIGUSR2){
@@ -60,13 +53,25 @@ void sigusr2Handler(int signum, siginfo_t *info, void *context) {
     }
 }    
 
-
+//#endif
 int main(int argc, char *argv[])  
 {
     // In this array I will put all the proces pid converted in int
     pid_t pids[argc];
     int i; //declared for all the for cycle
+    FILE *wdfile;
 
+    wdfile = fopen("watchd.txt", "w");
+    if (wdfile == NULL)
+    {
+        perror("Error opening file!\n");
+        return 1;
+        //exit(1);
+    }
+    fprintf(wdfile, "wd created\n");
+    fclose(wdfile);
+
+// #ifndef DEBUG
     /*configure the handler for sigusr2*/
     struct sigaction sa_usr2;
     sa_usr2.sa_sigaction = sigusr2Handler;
@@ -109,6 +114,7 @@ int main(int argc, char *argv[])
             sleep(5);     
         }     
     }
+// #endif
     return 0;
 }
 

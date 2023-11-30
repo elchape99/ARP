@@ -13,15 +13,7 @@
 #include <sys/shm.h>
 #include <sys/sem.h>
 
-void handle_sigusr(int sig, siginfo_t *siginfo, void *context)
-{
-    printf("Signal %d received from process %d\n", sig, siginfo->si_pid);
-    if (sig == SIGUSR1) {
-        watchdog = siginfo->si_pid;
-        kill(siginfo->si_pid, SIGUSR2) //send signal to the watchdog
-    }
-    
-}
+
 float weight = 0;
 float screw = 0; // attrito
 
@@ -34,6 +26,14 @@ typedef struct Position { // se problemi togli Position e anche gli altri
     int y;
 } position;
 
+#ifndef DEBUG
+void sigusr1Handler(int signum, siginfo_t *info, void *context) {
+    if (signum == SIGUSR1){
+        /*send a signal SIGUSR2 to watchdog */
+        //printf("SERVER sig handler");
+        kill(info->si_pid, SIGUSR2);
+    }
+}
 /*
 typedef struct Strenght{
     float fx;
@@ -45,6 +45,7 @@ typedef struct Velocity {
     float vy;
 } velocity;
 */
+#endif
 
 int main (int argc, char* argv[])
 {
@@ -58,13 +59,35 @@ int main (int argc, char* argv[])
     void* ptr;
     int shmid;
     int semid;
+    FILE *serverfile;
     
     // strength *force;
     // velocity *vel;
     position *pos;
     // server con shared memory riceve tutto da drone.c e manda alla mappa 
     // per muovere il drone 
+    serverfile = fopen("server.txt", "w");
+    if (serverfile == NULL)
+    {
+        perror("Error opening file!\n");
+        return 1;
+        //exit(1);
+    }
+    fprintf(serverfile, "Server created\n");
+    fclose(serverfile);
 
+    //configure the handler for sigusr1
+    struct sigaction sa_usr1;
+    sa_usr1.sa_sigaction = sigusr1Handler;
+    sa_usr1.sa_flags = SA_SIGINFO;
+
+    if (sigaction(SIGUSR1, &sa_usr1, NULL) == -1){ 
+        perror("sigaction");
+        return -1;
+    }
+
+
+#ifndef DEBUG
     if ((pipe(mfd)) < 0) {
         perror("pipe map ncurses");
         return 2;
@@ -106,7 +129,7 @@ int main (int argc, char* argv[])
     }
     // shared memory init
     pos = (position*) shmat(shmid, NULL, 0);
-    if ((void*) pos == (*void)-1) {
+    if ((void*) pos == (void*)-1) {
         perror("shmat");
         return 2;
     }
@@ -155,6 +178,8 @@ int main (int argc, char* argv[])
     shmctl(shmid, IPC_RMID, NULL);
     close(mfd[1]);
     wait(NULL);
+
+#endif
 
     return 0;
 }

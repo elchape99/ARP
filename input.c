@@ -17,17 +17,18 @@
 Acquired all the char and sends to the drone through pipes
 */
 
-//managing signal
-void handle_sigusr(int sig, siginfo_t *siginfo, void *context)
-{
-    printf("Signal %d received from process %d\n", sig, siginfo->si_pid);
-    if (sig == SIGUSR1) {
-        watchdog = siginfo->si_pid;
-        kill(siginfo->si_pid, SIGUSR2) //send signal to the watchdog
-    }
-    
-}
+#define DEBUG 1
 
+#ifndef DEBUG
+//managing signal
+void sigusr1Handler(int signum, siginfo_t *info, void *context) {
+    if (signum == SIGUSR1){
+        /*send a signal SIGUSR2 to watchdog */
+        wd = info->si_pid;
+        kill(info->si_pid, SIGUSR2);
+    }
+}
+#endif
 
 int main (int argc, char* argv[])
 {
@@ -38,7 +39,30 @@ int main (int argc, char* argv[])
     int ch;
     char realchar = '\0';
     int counter[NUMMOTIONS];
+    FILE *inputfile;
 
+    //configure the handler for sigusr1
+    struct sigaction sa_usr1;
+    sa_usr1.sa_sigaction = sigusr1Handler;
+    sa_usr1.sa_flags = SA_SIGINFO;
+
+    if (sigaction(SIGUSR1, &sa_usr1, NULL) == -1){ 
+        perror("sigaction");
+        return -1;
+    }
+
+    //create input file
+    inputfile = fopen("input.txt", "w");
+    if (inputfile == NULL)
+    {
+        perror("Error opening file!\n");
+        return 1;
+        //exit(1);
+    }
+    fprintf(inputfile, "input created\n");
+    fclose(inputfile);
+
+#ifndef DEBUG
     // opening pipe
     if (pipe(inpfd) < 0) {
         perror("pipe input ncurses");
@@ -127,5 +151,6 @@ int main (int argc, char* argv[])
 
 
     wait(NULL); // wait for the child to terminate
+#endif
     return 0;
 }

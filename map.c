@@ -12,6 +12,9 @@
 #include <string.h>
 #include <ncurses.h>
 #include "library/window.h"
+
+
+#define DEBUG 1
 typedef struct Position {
     int x;
     int y;
@@ -27,6 +30,7 @@ int main (int argc, char* argv[])
     int raws, cols;
     int offsetx, offsety;
     position p;
+#ifndef DEBUG
 
     initscr();
     raw();
@@ -75,7 +79,7 @@ int main (int argc, char* argv[])
     // fscanf(stdin, "%d", &ch);
     //devo capire come muovere il drone sulla mappa
     // }
-
+#endif
 
     close(pipe[0]);
     return 0;
