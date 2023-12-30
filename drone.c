@@ -1,0 +1,360 @@
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/select.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <semaphore.h>
+#include <sys/mman.h>
+#include <signal.h>
+#include <time.h>
+#include <stdarg.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+
+#define INP_NUM 8
+// size of the shaerd memory
+
+/* function for write in logfile*/
+void writeLog(const char *format, ...);
+/* signal handler functions, when receive a ignal from watchdog sena bach a signal*/
+void sigusr1Handler(int signum, siginfo_t *info, void *context);
+
+/* function for the dynamics of the drone */
+double *generate_input_vect(double **vect_pointer, char ch); // trasformare input in forza
+double *put_vector_to_zero(double **vect_pointer);           // inizializzazione vettore input
+
+double *generate_x_force(double *vect_pointer, double *force); // somma input nella forza X
+double *generate_y_force(double *vect_pointer, double *force); // somma input nella forza Y
+
+double *velocity(double Force, double initial_velocity, double *new_vel);     // data una forza calcola velocità sull'asse
+double *position(double Velocity, double initial_position, double *new_pose); // data una velocità calcola posizione sull'asse
+
+// Define the struct for the drone position
+struct DronePos
+{
+    double xPos;
+    double yPos;
+};
+
+#define SHM_SIZE sizeof(struct DronePos) // Dimensione della struttura
+
+int main(int argc, char *argv[])
+{
+
+    pid_t drone_pid = getpid();
+    // write into logfile
+    writeLog("DRONE create with pid %d ", drone_pid);
+    int i;
+
+    // configure the handler for sigusr1
+    struct sigaction sa_usr1;
+    sa_usr1.sa_sigaction = sigusr1Handler;
+    sa_usr1.sa_flags = SA_SIGINFO;
+
+    if (sigaction(SIGUSR1, &sa_usr1, NULL) == -1)
+    {
+        perror("sigaction");
+        return -1;
+    }
+
+    // manage pipe --------------------------------------------------------------------------
+    // pipe for writing the pid to watchdog
+    int fd3[2];
+    // file descritor are in position 3 and 4 of argv[]
+    for (i = 3; i < 5; i++)
+    {
+        fd3[i - 3] = atoi(argv[i]);
+    }
+    writeLog("file descritor riceived to drone from master are: %d, %d", fd3[0], fd3[1]);
+    // close the read file descriptor fd2[0]
+    if (close(fd3[0]) < 0)
+    {
+        perror("close fd3[0] drone");
+        writeLog("ERROR ==> close fd3[0] drone %m ");
+    }
+    // write the pid inside the pipe
+    if (write(fd3[1], &drone_pid, sizeof(drone_pid)) < 0)
+    {
+        perror("write fd3[1] drone");
+        writeLog("ERROR ==> write fd3[1] drone %m ");
+    }
+    // close the write file descriptor fd2[1]
+    if (close(fd3[1]) < 0)
+    {
+        perror("close fd3[1] drone");
+        writeLog("ERROR ==> close fd3[1] drone %m ");
+    }
+    // pipe for communication with input process
+    // file descriptor are in position 1 and 2 of argv[]
+    int pipe_fd[2];
+    for (i = 1; i < 3; i++)
+    {
+        pipe_fd[i - 1] = atoi(argv[i]);
+    }
+    printf("valore fd controllo(s,l): %d, %d\n", pipe_fd[1], pipe_fd[0]);
+    fflush(stdout);
+
+    // inizializzazione delle variabili per la dinamica --------------------------------------------------------------
+    double *input_vect = malloc(sizeof(double) * INP_NUM); // riservo la memoria per il vettore di input
+    for (int i = 0; i < INP_NUM; i++)
+    {
+        input_vect[i] = 0.0;
+        printf("%.2f  ", input_vect[i]);
+        fflush(stdout);
+    }
+
+    double XForce = 0.0, YForce = 0.0;
+    double *XForce_p = &XForce, *YForce_p = &YForce;
+
+    double Xvel = 0.0, Yvel = 0.0, Xpos = 0.0, Ypos = 0.0;
+    double *Xvel_p = &Xvel, *Xpos_p = &Xpos, *Yvel_p = &Yvel, *Ypos_p = &Ypos;
+
+    int retVal_read;
+    char ch;
+
+    // definizione variabili per la select
+    int retVal_sel;
+    fd_set read_fd;
+    struct timeval time_sel;
+
+    // define shared memory -----------------------------------------------------------------------------
+    key_t key = ftok("/tmp", 's'); // Usa la stessa chiave IPC del server
+    if (key == -1)
+    {
+        perror("ftok drone:");
+        writeLog("ERROR ==> ftok drone %m ");
+    }
+
+    int shmid = shmget(key, SHM_SIZE, 0666); // Ottieni l'ID della memoria condivisa
+    if (shmid == -1)
+    {
+        perror("shmget drone: ");
+        writeLog("ERROR ==> shmget drone %m ");
+        exit(EXIT_FAILURE);
+    }
+
+    struct DronePos *pos = (struct DronePos *)shmat(shmid, NULL, 0); // Attacca la memoria condivisa
+    if (pos == (void *)-1)
+    {
+        perror("shmat drone");
+        writeLog("ERROR ==> shmat drone %m ");
+        exit(EXIT_FAILURE);
+    }
+
+    // define semaohore -------------------------------------------------------------------------
+    const char *sem_name = "/sem1";
+
+    sem_t *sem1 = sem_open(sem_name, O_CREAT, 0666, 1);
+
+    if (sem1 == SEM_FAILED)
+    {
+        perror("sem_open");
+        writeLog("ERROR ==> sem_open drone %m ");
+        exit(EXIT_FAILURE);
+    }
+
+    // ciclo infinito per ricever input dalla tastiera
+    while (1)
+    {
+        // ridefinisco ad ogni ciclo --> azione select retVal_sel == 0
+        FD_ZERO(&read_fd);
+        FD_SET(pipe_fd[0], &read_fd); // definisco il set dei fd da controllare
+
+        time_sel.tv_sec = 0; // timeout settatto a 0.5 secondi
+        time_sel.tv_usec = 30000;
+
+        if ((retVal_sel = select(pipe_fd[0] + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
+        {
+            perror("errore select: "); // controllo errori
+        }
+        else if (retVal_sel == 0)
+        {
+            printf("no new data\n"); // pipe vuota
+            fflush(stdout);
+        }
+        else
+        { // nuovi dati disponibili
+            if ((retVal_read = read(pipe_fd[0], &ch, 1)) < 0)
+            {
+                perror("errore read"); // controllo errore read
+            }
+            else
+            {
+                printf("controllo lettura: %d, ( %c )\n", retVal_read, ch); // controllo valori letti
+                fflush(stdout);
+            }
+            input_vect = generate_input_vect(&input_vect, ch); // gli passo il valore di input ricevuto e scrivo nel vettore
+            for (int i = 0; i < 8; i++)
+            {
+                printf("%.2f ", input_vect[i]);
+            }
+            printf("\n");
+            fflush(stdout);
+        }
+
+        // genero valori di forza sui due assi
+        XForce_p = generate_x_force(input_vect, XForce_p);
+        YForce_p = generate_y_force(input_vect, YForce_p);
+
+        // genera velocità
+        Xvel_p = velocity(*XForce_p, *Xvel_p, Xvel_p);
+        Yvel_p = velocity(*YForce_p, *Yvel_p, Yvel_p);
+        // printf("controllo valori: yf:%.2f, yVel:%.2f\n", *YForce_p, *Yvel_p);
+        fflush(stdout);
+
+        // genera posizione
+        Xpos_p = position(*Xvel_p, *Xpos_p, Xpos_p);
+        Ypos_p = position(*Yvel_p, *Ypos_p, Ypos_p);
+
+        // pritn positions of terminal
+        // printf("forVal(x,y):%.2f, %.2f---velVal(x,y):%.2f, %.2f---posVal(x,y):%.2f, %.2f\n", *XForce_p, *YForce_p, *Xvel_p, *Yvel_p, *Xpos_p, *Ypos_p);
+        // fflush(stdout);
+        /* sed the position at server*/
+        if (sem_wait(sem1) < 0)
+        {
+            perror("sem_wait drone ");
+            writeLog("ERROR ==> sem_wait drone %m ");
+        }
+        pos->xPos = Xpos;
+        pos->yPos = Ypos;
+
+        if (sem_post(sem1) < 0)
+        {
+            perror("sem_post drone");
+            writeLog("ERROR ==> sem_post drone %m ");
+        }
+    }
+
+    // close the read file descriptor for pipe_fd
+    if (close(pipe_fd[0]) < 0)
+    {
+        perror("close pipe_fd[0] drone");
+        writeLog("ERROR ==> close pipe_fd[0] drone %m ");
+    }
+    // close the write file descriptor fd2[1]
+    if (close(pipe_fd[1]) < 0)
+    {
+        perror("close pipe_fd[1] drone");
+        writeLog("ERROR ==> close pipe_fd[1] drone %m ");
+    }
+    return 0;
+}
+
+void writeLog(const char *format, ...)
+{
+    FILE *logfile = fopen("logfile.txt", "a");
+    if (logfile < 0)
+    {
+        perror("Error opening logfile");
+        exit(EXIT_FAILURE);
+    }
+    va_list args;
+    va_start(args, format);
+
+    time_t current_time;
+    time(&current_time);
+
+    fprintf(logfile, "%s => ", ctime(&current_time));
+    vfprintf(logfile, format, args);
+
+    va_end(args);
+    fflush(logfile);
+    if (fclose(logfile) < 0)
+    {
+        perror("fclose logfile: ");
+    }
+}
+
+void sigusr1Handler(int signum, siginfo_t *info, void *context)
+{
+    if (signum == SIGUSR1)
+    {
+        /*send a signal SIGUSR2 to watchdog */
+        kill(info->si_pid, SIGUSR2);
+        writeLog("drone, pid: %d, received signal from wd pid: %d ", getpid(), info->si_pid);
+    }
+}
+
+double *generate_input_vect(double **vect_pointer, char ch)
+{
+    switch (ch)
+    {
+    case 'w':
+        (*vect_pointer)[7] = (*vect_pointer)[7] + 1;
+        break; // per ogni possibile input aumento il valore di un vettore
+    case 'e':
+        (*vect_pointer)[0] = (*vect_pointer)[0] + 1;
+        break; // caso 'q' --> programma termina o si blocca
+    case 'r':
+        (*vect_pointer)[1] = (*vect_pointer)[1] + 1;
+        break; // caso default da definire
+    case 'f':
+        (*vect_pointer)[2] = (*vect_pointer)[2] + 1;
+        break;
+    case 'v':
+        (*vect_pointer)[3] = (*vect_pointer)[3] + 1;
+        break;
+    case 'c':
+        (*vect_pointer)[4] = (*vect_pointer)[4] + 1;
+        break;
+    case 'x':
+        (*vect_pointer)[5] = (*vect_pointer)[5] + 1;
+        break;
+    case 's':
+        (*vect_pointer)[6] = (*vect_pointer)[6] + 1;
+        break;
+    case 'd':
+        *vect_pointer = put_vector_to_zero(&(*vect_pointer));
+        break;
+    case 'q':
+        sleep(5);
+    default:
+        break;
+    }
+
+    return *vect_pointer;
+}
+
+double *put_vector_to_zero(double **vect_pointer)
+{
+    for (int i = 0; i < INP_NUM; i++)
+    {
+        (*vect_pointer)[i] = 0.0; // inizializzazione
+    }
+    return *vect_pointer;
+}
+
+double *generate_x_force(double *vect_pointer, double *force)
+{
+    // ogni elemento rapprensenta una direzione per il drone
+    *force = vect_pointer[2] - vect_pointer[6] + vect_pointer[1] / 2.0 + vect_pointer[3] / 2.0 - vect_pointer[7] / 2.0 - vect_pointer[5] / 2.0;
+    return force;
+}
+
+double *generate_y_force(double *vect_pointer, double *force)
+{
+    *force = vect_pointer[0] - vect_pointer[4] + vect_pointer[1] / 2.0 - vect_pointer[3] / 2.0 + vect_pointer[7] / 2.0 - vect_pointer[5] / 2.0;
+    return force;
+}
+
+// le due seguenti funzioni eseguono un integrazione numerica approssimata forza(accelerazione)->velocità->posizione
+double *velocity(double Force, double initial_velocity, double *new_vel)
+{
+    double dtime_m = 0.1 / 0.5, frict_k = -0.5;
+
+    // printf("in -- %.2f + %f * (%.2f + %f * %.2f) --- %.2f\n", initial_velocity, dtime_m, Force, frict_k, initial_velocity, *new_vel);
+    *new_vel = initial_velocity + dtime_m * (Force + frict_k * initial_velocity);
+    // printf("out-- %.2f --\n", *new_vel);
+    return new_vel;
+}
+
+double *position(double Velocity, double initial_position, double *new_pose)
+{
+    double dtime = 0.1;
+
+    *new_pose = initial_position + dtime * Velocity;
+    return new_pose;
+}
