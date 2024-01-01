@@ -120,41 +120,7 @@ int main(int argc, char *argv[])
     fd_set read_fd;
     struct timeval time_sel;
 
-    // define shared memory -----------------------------------------------------------------------------
-    key_t key = ftok("/tmp", 's'); // Usa la stessa chiave IPC del server
-    if (key == -1)
-    {
-        perror("ftok drone:");
-        writeLog("ERROR ==> ftok drone %m ");
-    }
-
-    int shmid = shmget(key, SHM_SIZE, 0666); // Ottieni l'ID della memoria condivisa
-    if (shmid == -1)
-    {
-        perror("shmget drone: ");
-        writeLog("ERROR ==> shmget drone %m ");
-        exit(EXIT_FAILURE);
-    }
-
-    struct DronePos *pos = (struct DronePos *)shmat(shmid, NULL, 0); // Attacca la memoria condivisa
-    if (pos == (void *)-1)
-    {
-        perror("shmat drone");
-        writeLog("ERROR ==> shmat drone %m ");
-        exit(EXIT_FAILURE);
-    }
-
-    // define semaohore -------------------------------------------------------------------------
-    const char *sem_name = "/sem1";
-
-    sem_t *sem1 = sem_open(sem_name, O_CREAT, 0666, 1);
-
-    if (sem1 == SEM_FAILED)
-    {
-        perror("sem_open");
-        writeLog("ERROR ==> sem_open drone %m ");
-        exit(EXIT_FAILURE);
-    }
+  
 
     // ciclo infinito per ricever input dalla tastiera
     while (1)
@@ -213,19 +179,7 @@ int main(int argc, char *argv[])
         // printf("forVal(x,y):%.2f, %.2f---velVal(x,y):%.2f, %.2f---posVal(x,y):%.2f, %.2f\n", *XForce_p, *YForce_p, *Xvel_p, *Yvel_p, *Xpos_p, *Ypos_p);
         // fflush(stdout);
         /* sed the position at server*/
-        if (sem_wait(sem1) < 0)
-        {
-            perror("sem_wait drone ");
-            writeLog("ERROR ==> sem_wait drone %m ");
-        }
-        pos->xPos = Xpos;
-        pos->yPos = Ypos;
-
-        if (sem_post(sem1) < 0)
-        {
-            perror("sem_post drone");
-            writeLog("ERROR ==> sem_post drone %m ");
-        }
+       
     }
 
     // close the read file descriptor for pipe_fd

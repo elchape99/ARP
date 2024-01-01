@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     pid_t pids_from_master[num_ps];
     pid_t pids_from_process[num_ps];
     // declared for all the for cycle
-    int i; 
+    int i;
 
     /*configure the handler for sigusr2*/
     struct sigaction sa_usr2;
@@ -72,158 +72,86 @@ int main(int argc, char *argv[])
     if (sigaction(SIGUSR2, &sa_usr2, NULL) == -1)
     {
         perror("wd: sigaction");
-        writeLog("ERROR ==> wd: sigaction %m ");
+        writeLog("==> ERROR ==> wd: sigaction %m ");
     }
-
-    // exctract the pids coming from mster They are in positions 7, 8 and 9 of argv[]
-    // pids coming from master are different from pidz comin from pipe because the process are execute with konsole so the pids are different
-    for (i = 7; i < 10; i++)
+    // exctract and convert the pid send from master, they are in position 1 => nm_ps +1
+    for (i = 1; i < num_ps + 1; i++)
     {
-        pids_from_master[i] = atoi(argv[i]);
+        pids_from_master[i - 1] = atoi(argv[i]);
     }
-
-    // manage pipe -------------------------------------------------------------
-
-    // read all the pid from pipee fd1 = server, fd2 = input, fd3 = drone
-    // fd1 stand in position 1 and 2
-    int fd1[2];
-    for (int i = 1; i < 3; i++)
+    // extract and convert in integer the pid received from process position num_ps +1 => 2*num_ps +1
+    for (i = num_ps + 1; i < (2 * num_ps) + 1; i++)
     {
-        fd1[i - 1] = atoi(argv[i]);
+        pids_from_process[i - (num_ps + 1)] = atoi(argv[i]);
     }
-    // fd2 stand in position 3 and 4
-    int fd2[2];
-    for (int i = 3; i < 5; i++)
+    // write in logfile all the process received
+    for (i = 0; i < num_ps; i++)
     {
-        fd2[i - 3] = atoi(argv[i]);
+        writeLog("WATCHDOG received pid from master: %d", pids_from_master[i]);
     }
-    // fd3 stand in position 5 and 6
-    int fd3[2];
-    for (int i = 5; i < 7; i++)
+    for (i = 0; i < num_ps; i++)
     {
-        fd3[i - 5] = atoi(argv[i]);
+        writeLog("WATCHDOG received pid from process: %d", pids_from_process[i]);
     }
-    writeLog("The file descriptor fd1 received from master to watchdog are: %d %d ", fd1[0], fd1[1]);
-    writeLog("The file descriptor fd2 received from master to watchdog are: %d %d ", fd2[0], fd2[1]);
-    writeLog("The file descriptor fd3 received from master to watchdog are: %d %d ", fd3[0], fd3[1]);
-
-    // part for the pipe fd1 (server) -------------------------------------
-    // wtchdog need to read, close the write fd -> fd1[1]
-    if (close(fd1[1]) < 0)
-    {
-        perror("close fd[1] wd");
-        writeLog("ERROR ==> close fd1[1] wd %m ");
-    }
-    if (read(fd1[0], &pids[0], sizeof(pid_t)) < 0)
-    {
-        perror("read fd1[0] wd");
-        writeLog(" ERROR ==> read fd1[0] wd %m ");
-    }
-    if (close(fd1[0]) < 0)
-    {
-        perror("close fd1[0] wd");
-        writeLog(" ERROR ==> close fd1[0] wd %m ");
-    }
-
-    // part for the pipe fd2 (input) -----------------------------
-    // wtchdog need to read, close the write fd -> fd2[1]
-    if (close(fd2[1]) < 0)
-    {
-        perror("close fd2[1] wd");
-        writeLog("ERROR ==> close fd2[1] wd %m ");
-    }
-    // read the pid value from pipe, the pid of input
-    if (read(fd2[0], &pids[1], sizeof(pid_t)) < 0)
-    {
-        perror("read fd2[0] wd");
-        writeLog(" ERROR ==> read fd2[0] wd %m ");
-    }
-    // close the read file descriptor fd2[0]
-    if (close(fd2[0]) < 0)
-    {
-        perror("close fd3[0] wd");
-        writeLog(" ERROR ==> close fd3[0] wd %m ");
-    }
-
-    // part of the pipe fd3 (drone) -------------------------------------------
-    // close the write file descriptor fd3[1]
-    if (close(fd3[1]) < 0)
-    {
-        perror("close fd3[0] wd");
-        writeLog(" ERROR ==> close fd3[0] wd %m ");
-    }
-
-    // read the pid value from pipe, the pid of drone
-    if (read(fd3[0], &pids[2], sizeof(pid_t)) < 0)
-    {
-        perror("read fd3[0] wd");
-        writeLog(" ERROR ==> read fd3[0] wd %m ");
-    }
-    // close the read file descriptor fd[0]
-    if (close(fd3[0]) < 0)
-    {
-        perror("close fd3[0] wd");
-        writeLog(" ERROR ==> close fd3[0] wd %m ");
-    }
-
-    writeLog("Watchdog read server pid: %d ", pids[0]);
-    writeLog("Watchdog read input pid: %d ", pids[1]);
-    writeLog("Watchdog read drone pid: %d ", pids[2]);
+    // infinite loop for the operations of wd
     while (1)
     {
-        counter = 0; // Inizialize the counter every time enter in the loop
-        /* send a signal to all process */
+        // Inizialize the counter every time enter in the loop
+        counter = 0;
+        // send a signal to all process 
         for (i = 0; i < num_ps; i++)
         {
             /* send signal to all process*/
-            if (kill(pids[i], SIGUSR1) != 0)
+            if (kill(pids_from_process[i], SIGUSR1) != 0)
             {
-                writeLog("ERROR ==> kill signal SIGUSR1 wd %m ");
+                writeLog("==> ERROR ==> wd: kill signal SIGUSR1 wd %m ");
             }
-            /* increment the counter when send the signal*/
+            /* increment the counter when send the signal SIGUSR1*/
             counter++;
             sleep(1);
             printf("%d", counter);
             fflush(stdout);
             if (counter == 0)
             {
-                /* in this case the proccess is alive*
-                /* write into logfile*/
-                writeLog("Counter == 0 ");
-                writeLog("Process %d is alive ", pids[i]);
+                // case where the proccess is alive
+                writeLog("WATCHDOG: Process %d is alive ", pids_from_process[i]);
             }
             else
             {
-                /*The proces doesn't work*/
+                // Case where the process do not work
                 /*kill all process*/
-                for (int j = 0; j < num_ps; j++)
+                for (int j = 0; j < num_ps + 1; j++)
                 {
                     if (kill(pids_from_master[j], SIGKILL) == 0)
                     {
                         /*write into logfile that wd close the process*/
-                        writeLog("process %d is closed by WATCHDOG ", pids_from_master[j]);
+                        writeLog("WATCHDOG: process %d is closed by wd ", pids_from_master[j]);
                     }
                     else
                     {
-                        writeLog("ERROR ==> kill signal SIGKILL wd %m ");
-                    }
-                }
-                for (int k = 0; k < num_ps; k++)
-                {
-                    if (kill(pids_from_master[k], SIGKILL) == 0)
+                        writeLog("==> ERROR ==> wd: kill signal SIGKILL %m ");
+                    }           
+                    if (kill(pids_from_master[j], SIGKILL) == 0)
                     {
                         /*write into logfile that wd close the process*/
-                        writeLog("process %d is closed by WATCHDOG ", pids_from_master[k]);
+                        writeLog("WATCHDOG: process %d is closed by wd ", pids_from_master[j]);
                     }
                     else
                     {
-                        writeLog("ERROR ==> kill signal SIGKILL wd %m ");
+                        writeLog("==> ERROR ==> wd: kill signal SIGKILL wd %m ");
                     }
+                    /*
+                    if (exit(0) == -1){
+                        perror("WD: exit() ");
+                        writeLog("==> ERROR ==> wd:  ");
+     
+                    }*/
+                    
                 }
-
+                return 0;
             }
             sleep(1);
         }
+
     }
-    return 0;
 }

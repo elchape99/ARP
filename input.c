@@ -30,8 +30,8 @@ pid_t wd;
 
 int main(int argc, char *argv[])
 {
-    pid_t input_pid = getpid();
     int i;
+    pid_t input_pid = getpid();
     // write into logfile the pid
     writeLog("INPUT create with pid %d ", input_pid);
 
@@ -42,45 +42,48 @@ int main(int argc, char *argv[])
 
     if (sigaction(SIGUSR1, &sa_usr1, NULL) == -1)
     {
-        perror("sigaction");
-        writeLog("ERROR ==> sigaction input %m ");
+        perror("input: sigaction");
+        writeLog("==> ERROR ==> input: sigaction input %m ");
     }
 
     // Manage pipe ----------------------------------------------------------
-    // pipe_fd are in position 1 and 2 of argv[]
-    int pipe_fd[2]; // recupero dall'argv i file descriptor delle pipe
+    // pipe from master: fd2 are in position 1 and 2 of argv
+    int fd2[2];
     for (i = 1; i < 3; i++)
     {
-        pipe_fd[i - 1] = atoi(argv[i]);
+        fd2[i - 1] = atoi(argv[i]);
     }
+    writeLog("INPUT value of fd2 are: %d, %d ", fd2[0], fd2[1]);
+    // pipe_fd are in position 3 and 4 of argv[]
+    int pipe_fd[2]; // recupero dall'argv i file descriptor delle pipe
+    for (i = 3; i < 5; i++)
+    {
+        pipe_fd[i - 3] = atoi(argv[i]);
+    }
+    writeLog("INPUT value of pipe_fd are: %d, %d ", pipe_fd[0], pipe_fd[1]);
+
     printf("valore fd controllo(s,l): %d, %d\n", pipe_fd[1], pipe_fd[0]);
     fflush(stdout);
 
-    // fd2 are in position 3 and 4 of argv
-    int fd2[2];
-    for (i = 3; i < 5; i++)
-    {
-        fd2[i - 3] = atoi(argv[i]);
-    }
-    writeLog("value of fd2 on input are: %d, %d", fd2[0], fd2[1]);
+  
     // nput need to write the pid inside the pipe
     // close the read file descriptor fd2[0]
     if (close(fd2[0]) < 0)
     {
-        perror("close fd2[0] input");
-        writeLog("ERROR ==> close fd2[0] input %m ");
+        perror("input: close fd2[0] ");
+        writeLog("ERROR ==> input: close fd2[0] %m ");
     }
     // write the pid inside the pipe
     if (write(fd2[1], &input_pid, sizeof(input_pid)) < 0)
     {
         perror("write fd2[1] input");
-        writeLog("ERROR ==> write fd2[1] input %m ");
+        writeLog("ERROR ==> input: write fd2[1] %m ");
     }
     // close the write file descriptor fd2[1]
     if (close(fd2[1]) < 0)
     {
         perror("close fd2[1] input");
-        writeLog("ERROR ==> close fd2[1] input %m ");
+        writeLog("ERROR ==> input: close fd2[1] %m ");
     }
 
     char input_char; // definisco la variabile di input

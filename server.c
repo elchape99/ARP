@@ -15,7 +15,6 @@
 #include <sys/ipc.h>
 
 #define DRONE_ICON 'X'
-
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
 {
@@ -43,8 +42,9 @@ void writeLog(const char *format, ...)
         writeLog("ERROR ==> server: fclose logfile");
     }
 }
- 
-// Inserire perror nella kill 
+
+
+// Inserire perror nella kill
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
 {
     if (signum == SIGUSR1)
@@ -66,42 +66,40 @@ typedef struct
     double Ypos;
 } posizione;
 
-#define SHM_SIZE sizeof(posizione) // Dimensione della struttura
-
 int main(int argc, char *argv[])
 {
+    // variable usefull for the for cycle
     int i;
     // actual pid of the server
     pid_t server_pid = getpid();
     // write into logfile
     writeLog("SERVER create with pid %d ", server_pid);
 
-    /*Take the fd for comunicating with watchdog from argv[] the position are in 1 and 2 position*/
+    // Take the fd for comunicating with master, it's position is 1,2 in argv[]
     int fd1[2];
     for (i = 1; i < 3; i++)
     {
         fd1[i - 1] = atoi(argv[i]);
     }
-    writeLog("the file descriptor received from master to server are: %d %d", fd1[0], fd1[1]);
+    writeLog("SERVER value of fd1 are: %d %d ", fd1[0], fd1[1]);
 
-    //close the read fiel descriptor fd1[0]
+    // close the read fiel descriptor fd1[0]
     if (close(fd1[0]) < 0)
     {
         perror("server: close fd1[1]");
         writeLog("ERROR ==> server: close fd1[0], %m ");
     }
-    // write the pis in the pipe
+    // write the pid in the pipe
     if (write(fd1[1], &server_pid, sizeof(server_pid)) < 0)
     {
         perror("server: write fd1[1],");
         writeLog("ERROR ==> server, write fd1[1] %m ");
-    }
+    }    
     if (close(fd1[1]) < 0)
     {
         perror("server: close fd1[1]");
         writeLog("ERROR ==> server: close fd1[1], %m ");
     }
-
 
     //////////////////////////////////// CONTORLLARE TUTTI  MESSAGGI DI ERRORE DA QUI IN AVANTI ///////////////////////77
 
@@ -114,37 +112,6 @@ int main(int argc, char *argv[])
     {
         perror("sigaction");
         return -1;
-    }
-
-    // Initialization of shared memory
-    key_t key = ftok("/tmp", 's');                       // Genera la chiave IPC
-    int shmid = shmget(key, SHM_SIZE, IPC_CREAT | 0666); // Ottieni l'ID della memoria condivisa
-    if (shmid == -1)
-    {
-        perror("Errore nell'ottenere l'ID della memoria condivisa");
-        writeLog("ERROR ==> shmget server: %m ");
-
-        exit(EXIT_FAILURE);
-    }
-    posizione *pos = (posizione *)shmat(shmid, NULL, 0); // Attacca la memoria condivisa
-    if (pos == (void *)-1)
-    {
-        perror("Errore nell'attaccamento della memoria condivisa");
-        writeLog("ERROR ==> shmat server: %m ");
-
-        exit(EXIT_FAILURE);
-    }
-
-    // manage semahore ---------------------------------------------
-    const char *sem_name = "/sem1";
-
-    sem_t *sem1 = sem_open(sem_name, O_CREAT, 0666, 0);
-
-    if (sem1 == SEM_FAILED)
-    {
-        perror("sem_open server: ");
-        writeLog("ERROR ==> sem_open server %m ");
-        exit(EXIT_FAILURE);
     }
 
     // parte legata ad ncurses per il server
@@ -168,24 +135,11 @@ int main(int argc, char *argv[])
     colSH = Scol / 2;
 
     // creo la finestra della mappa
-    map_window = create_new_window(Srow, Scol, 0, 0);
-    move_drone_icon(rowSH - (int)pos->Ypos, colSH + (int)pos->Xpos, map_window);
+    // map_window = create_new_window(Srow, Scol, 0, 0);
+    // move_drone_icon(rowSH - (int)pose->Ypos, colSH + (int)pos->Xpos, map_window);
 
     while (1)
     {
-        // creo la variabile posizione in modo randomico
-        if (sem_wait(sem1) < 0)
-        {
-            perror("sem_wait server");
-            writeLog("ERROR ==> sem_wait server %m ");
-        }
-        drone_pose.Ypos = pos->Ypos;
-        drone_pose.Xpos = pos->Xpos;
-        if (sem_post(sem1) < 0)
-        {
-            perror("sem_post server ");
-            writeLog("ERROR ==> sem_post server %m ");
-        }
 
         if ((int)drone_pose.Ypos == (int)drone_pose_old.Ypos && (int)drone_pose.Xpos == (int)drone_pose_old.Xpos)
         {
@@ -203,9 +157,6 @@ int main(int argc, char *argv[])
         //  printf("Posizione: (%lf, %lf)\n", pos->Xpos, pos->Ypos);
         //  fflush(stdout);
     }
-
-    shmdt(pos);                    // Stacca la memoria condivisa
-    shmctl(shmid, IPC_RMID, NULL); // Rimuove la memoria condivisa quando il server termina
 
     return 0;
 }
