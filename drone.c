@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
     {
         fd3[i - 3] = atoi(argv[i]);
     }
-    writeLog("file descritor riceived to drone from master are: %d, %d", fd3[0], fd3[1]);
+    writeLog("DRONE riceived fd1: %d, %d", fd3[0], fd3[1]);
     // close the read file descriptor fd2[0]
     if (close(fd3[0]) < 0)
     {
@@ -228,7 +228,7 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context)
     {
         /*send a signal SIGUSR2 to watchdog */
         kill(info->si_pid, SIGUSR2);
-        writeLog("drone, pid: %d, received signal from wd pid: %d ", getpid(), info->si_pid);
+        writeLog("DRONE, pid: %d, received signal from wd pid: %d ", getpid(), info->si_pid);
     }
 }
 

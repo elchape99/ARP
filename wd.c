@@ -12,7 +12,7 @@
 #include <time.h>
 #include <stdarg.h>
 
-#define PROCESS_NUMBER 3;
+#define PROCESS_NUMBER 5; 
 
 void writeLog(const char *format, ...)
 {
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
             if (counter == 0)
             {
                 // case where the proccess is alive
-                writeLog("WATCHDOG: Process %d is alive ", pids_from_process[i]);
+                writeLog("V - WATCHDOG: Process %d is alive ", pids_from_process[i]);
             }
             else
             {
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
                     if (kill(pids_from_master[j], SIGKILL) == 0)
                     {
                         /*write into logfile that wd close the process*/
-                        writeLog("WATCHDOG: process %d is closed by wd ", pids_from_master[j]);
+                        writeLog(" * WATCHDOG: process %d is closed by wd ", pids_from_master[j]);
                     }
                     else
                     {

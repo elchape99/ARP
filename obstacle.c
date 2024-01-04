@@ -21,8 +21,8 @@ void writeLog(const char *format, ...)
     FILE *logfile = fopen("logfile.txt", "a");
     if (logfile == NULL)
     {
-        perror("terget: error opening logfile");
-        exit(EXIT_FAILURE);
+        perror("obstacle: error opening logfile");
+        //exit(EXIT_FAILURE);
     }
     va_list args;
     va_start(args, format);
@@ -38,7 +38,7 @@ void writeLog(const char *format, ...)
     if (fclose(logfile) == -1)
     {
         perror("fclose logfile");
-        writeLog("ERROR ==> target: fclose logfile");
+        writeLog("ERROR ==> obstacle: fclose logfile");
     }
 }
 
@@ -48,26 +48,24 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context)
     if (signum == SIGUSR1)
     {
         /*send a signal SIGUSR2 to watchdog */
-        // printf("SERVER sig handler");
         if (kill(info->si_pid, SIGUSR2) == 0)
         {
-            writeLog("TARGET: pid %d, received signal from wd pid: %d ", getpid(), info->si_pid);
+            writeLog("OBSTACLE: pid %d, received signal from wd pid: %d ", getpid(), info->si_pid);
         }
         else
         {
-            writeLog("TARGET");
+            writeLog("==> ERROR ==> obstacle: kill SIGUSR2 %m ");
         }
     }
 }
-
 
 int main(int argc, char *argv[])
 {
     // variable used in for cycle
     int i;
-    pid_t target_pid = getpid();
+    pid_t obstacle_pid = getpid();
     // write into logfile the pid
-    writeLog("TARGET create with pid %d ", target_pid);
+    writeLog("OBSTACLE create with pid %d ", obstacle_pid);
 
     // configure the handler for sigusr1
     struct sigaction sa_usr1;
@@ -76,34 +74,34 @@ int main(int argc, char *argv[])
 
     if (sigaction(SIGUSR1, &sa_usr1, NULL) == -1)
     {
-        perror("target: sigaction");
-        writeLog("==> ERROR ==> target: sigaction input %m ");
+        perror("obstacle: sigaction");
+        writeLog("==> ERROR ==> obstacle: sigaction %m ");
     }
 
     // Take the fd for comunicating with master, it's position is 1,2 in argv[]
-    int fd4[2];
+    int fd5[2];
     for (i = 1; i < 3; i++)
     {
-        fd4[i - 1] = atoi(argv[i]);
+        fd5[i - 1] = atoi(argv[i]);
     }
-    writeLog("TARGET value of fd4 are: %d %d ", fd4[0], fd4[1]);
+    writeLog("OBSTACLE value of fd5 are: %d %d ", fd5[0], fd5[1]);
 
     // close the read fiel descriptor fd1[0]
-    if (close(fd4[0]) < 0)
+    if (close(fd5[0]) < 0)
     {
-        perror("targtet: close fd1[1]");
-        writeLog("ERROR ==> server: close fd1[0], %m ");
+        perror("obstacle: close fd5[1]");
+        writeLog("==> ERROR ==> obstacle: close fd5[0], %m ");
     }
     // write the pid in the pipe
-    if (write(fd4[1], &target_pid, sizeof(target_pid)) < 0)
+    if (write(fd5[1], &obstacle_pid, sizeof(obstacle_pid)) < 0)
     {
-        perror("target: write fd4[1],");
-        writeLog("ERROR ==> server, write fd4[1] %m ");
+        perror("obstacle: write fd5[1],");
+        writeLog("==> ERROR ==> obstacle, write fd5[1] %m ");
     }    
-    if (close(fd4[1]) < 0)
+    if (close(fd5[1]) < 0)
     {
-        perror("target: close fd4[1]");
-        writeLog("ERROR ==> server: close fd4[1], %m ");
+        perror("obstacle: close fd5[1]");
+        writeLog("==> ERROR ==> obstacle: close fd5[1], %m ");
     }
     while(1)
     {
