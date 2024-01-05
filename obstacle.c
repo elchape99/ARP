@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
+#include "arplib.h"
 
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
@@ -21,8 +22,8 @@ void writeLog(const char *format, ...)
     FILE *logfile = fopen("logfile.txt", "a");
     if (logfile == NULL)
     {
-        perror("obstacle: error opening logfile");
-        //exit(EXIT_FAILURE);
+        perror("server: error opening logfile");
+        exit(EXIT_FAILURE);
     }
     va_list args;
     va_start(args, format);
@@ -38,9 +39,10 @@ void writeLog(const char *format, ...)
     if (fclose(logfile) == -1)
     {
         perror("fclose logfile");
-        writeLog("ERROR ==> obstacle: fclose logfile");
+        writeLog("ERROR ==> server: fclose logfile");
     }
 }
+
 
 // Inserire perror nella kill
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
@@ -54,6 +56,7 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context)
         }
         else
         {
+            perror("obstacle: kill SIGUSR2 ");
             writeLog("==> ERROR ==> obstacle: kill SIGUSR2 %m ");
         }
     }
@@ -77,7 +80,8 @@ int main(int argc, char *argv[])
         perror("obstacle: sigaction");
         writeLog("==> ERROR ==> obstacle: sigaction %m ");
     }
-
+    
+    //// -- manage pipe ----------------------------------------------------------
     // Take the fd for comunicating with master, it's position is 1,2 in argv[]
     int fd5[2];
     for (i = 1; i < 3; i++)
@@ -86,7 +90,7 @@ int main(int argc, char *argv[])
     }
     writeLog("OBSTACLE value of fd5 are: %d %d ", fd5[0], fd5[1]);
 
-    // close the read fiel descriptor fd1[0]
+    // close the read file descriptor fd1[0]
     if (close(fd5[0]) < 0)
     {
         perror("obstacle: close fd5[1]");
@@ -97,16 +101,39 @@ int main(int argc, char *argv[])
     {
         perror("obstacle: write fd5[1],");
         writeLog("==> ERROR ==> obstacle, write fd5[1] %m ");
-    }    
+    }
     if (close(fd5[1]) < 0)
     {
         perror("obstacle: close fd5[1]");
         writeLog("==> ERROR ==> obstacle: close fd5[1], %m ");
     }
-    while(1)
+
+    //// pipe for communication between obstacle -> server, are in ositions 3, 4 of argv[]
+    printf("print in screen the value of argv 3 and 4: %s, %s ", argv[3], argv[4]);
+    
+    int fdo_s[2];
+    for (i = 3; i < 5; i++)
+    {
+        fdo_s[i - 3] = atoi(argv[i]);
+    }
+    writeLog("OBSTACLE value of fdo_s are: %d %d ", fdo_s[0], fdo_s[1]);
+
+    // close the read file descriptor
+    if (close(fdo_s[0]) == -1)
+    {
+        perror("obstacle: close fdo_s[0] ");
+        writeLog("==> ERROR ==> obstacle: close fdo_s[0], %m ");
+    }
+
+    while (1)
     {
         sleep(1);
     }
 
-
+    // close the write file descriptor fdo_s
+    if (close(fdo_s[1]) == -1)
+    {
+        perror("obstacle: close fdo_s[1] ");
+        writeLog("==> ERROR ==> obstacle: close fdo_s[1], %m ");
+    }
 }

@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
+#include "arplib.h"
 
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
@@ -21,7 +22,7 @@ void writeLog(const char *format, ...)
     FILE *logfile = fopen("logfile.txt", "a");
     if (logfile == NULL)
     {
-        perror("terget: error opening logfile");
+        perror("server: error opening logfile");
         exit(EXIT_FAILURE);
     }
     va_list args;
@@ -38,9 +39,10 @@ void writeLog(const char *format, ...)
     if (fclose(logfile) == -1)
     {
         perror("fclose logfile");
-        writeLog("ERROR ==> target: fclose logfile");
+        writeLog("ERROR ==> server: fclose logfile");
     }
 }
+
 
 // Inserire perror nella kill
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
@@ -55,11 +57,11 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context)
         }
         else
         {
-            writeLog("TARGET");
+            perror("target: kill SIGUSR2 ");
+            writeLog("==> ERROR ==> target: kill SIGUSR2 %m");
         }
     }
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -92,23 +94,38 @@ int main(int argc, char *argv[])
     if (close(fd4[0]) < 0)
     {
         perror("targtet: close fd1[1]");
-        writeLog("ERROR ==> server: close fd1[0], %m ");
+        writeLog("==> ERROR ==> target: close fd1[0], %m ");
     }
     // write the pid in the pipe
     if (write(fd4[1], &target_pid, sizeof(target_pid)) < 0)
     {
         perror("target: write fd4[1],");
-        writeLog("ERROR ==> server, write fd4[1] %m ");
-    }    
+        writeLog("==> ERROR ==> target, write fd4[1] %m ");
+    }
     if (close(fd4[1]) < 0)
     {
         perror("target: close fd4[1]");
-        writeLog("ERROR ==> server: close fd4[1], %m ");
+        writeLog("==> ERROR ==> target: close fd4[1], %m ");
     }
-    while(1)
+
+    //// pipe for comunication between target->server, are in position 3, 4
+    int fdt_s[2];
+    for (i = 3; i < 5; i++)
+    {
+        fdt_s[i - 3] = atoi(argv[i]);
+    }
+    writeLog("TARGET value of fdt_s are: %d %d ", fdt_s[0], fdt_s[1]);
+
+    // close the read file descriptor, target only write data in the pipe
+    if (close(fdt_s[0]) == -1)
+    {
+        perror("target: close ");
+        writeLog("==> ERROR ==> target: close fdt_s[1], %m ");
+    }
+    int x = 4;
+
+    while (1)
     {
         sleep(1);
     }
-
-
 }

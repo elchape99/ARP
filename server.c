@@ -13,8 +13,10 @@
 #include <stdarg.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
+#include "arplib.h"
 
 #define DRONE_ICON 'X'
+
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
 {
@@ -43,7 +45,6 @@ void writeLog(const char *format, ...)
     }
 }
 
-
 // Inserire perror nella kill
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
 {
@@ -64,7 +65,7 @@ typedef struct
 {
     double Xpos;
     double Ypos;
-} posizione;
+}posizione;
 
 int main(int argc, char *argv[])
 {
@@ -74,6 +75,20 @@ int main(int argc, char *argv[])
     pid_t server_pid = getpid();
     // write into logfile
     writeLog("SERVER create with pid %d ", server_pid);
+
+    // configure the handler for sigusr1
+    struct sigaction sa_usr1;
+    sa_usr1.sa_sigaction = sigusr1Handler;
+    sa_usr1.sa_flags = SA_SIGINFO;
+
+    if (sigaction(SIGUSR1, &sa_usr1, NULL) == -1)
+    {
+        perror("sigaction");
+        writeLog("ERROR ==> server: sigaction SIGUSR1 %m ");
+
+
+        return -1;
+    }
 
     // Take the fd for comunicating with master, it's position is 1,2 in argv[]
     int fd1[2];
@@ -101,18 +116,66 @@ int main(int argc, char *argv[])
         writeLog("ERROR ==> server: close fd1[1], %m ");
     }
 
-    //////////////////////////////////// CONTORLLARE TUTTI  MESSAGGI DI ERRORE DA QUI IN AVANTI ///////////////////////77
 
-    // configure the handler for sigusr1
-    struct sigaction sa_usr1;
-    sa_usr1.sa_sigaction = sigusr1Handler;
-    sa_usr1.sa_flags = SA_SIGINFO;
 
-    if (sigaction(SIGUSR1, &sa_usr1, NULL) == -1)
+
+    //--Manage pipe----------------------------------------------------------
+
+    //// Take the fdi_s for comunication input-server, fdi_s are in positions 3, 4
+    int fdi_s[2];
+    for (i = 3; i < 5; i++)
     {
-        perror("sigaction");
-        return -1;
+        fdi_s[i - 3] = atoi(argv[i]);
     }
+    // close the write file descriptor fdi_s[1], server only read from input
+    if (close(fdi_s[1]) < 0)
+    {
+        perror("server: close fdi_s[1]");
+        writeLog("ERROR ==> server: close fdi_s[1], %m ");
+    }
+    writeLog("SERVER value of fdi_s are: %d %d ", fdi_s[0], fdi_s[1]);
+
+
+    //// Take the fdd_s for comunication drone-server, fdd_s are in positions 5, 6
+    int fdd_s[2];
+    for (i = 5; i < 7; i++)
+    {
+        fdd_s[i - 5] = atoi(argv[i]);
+    }
+    // This pipe is usefull for send and receive data from server to drone (is used for dynamics) 
+    writeLog("SERVER value of fdd_s are: %d %d ", fdd_s[0], fdd_s[1]);
+
+    //// Take the fdt_s for comunication between targer-server, position 7, 8
+    int fdt_s[2];
+    for (i = 7; i < 9; i++)
+    {
+        fdt_s[i - 7] = atoi(argv[i]);
+    }
+    writeLog("SERVER value of fdt_s are: %d %d ", fdt_s[0], fdt_s[1]);
+
+    // close the write file descriptor fdt_s[1], server only read from target
+    if (close(fdt_s[1]) < 0)
+    {
+        perror("server: close fdt_s[1]");
+        writeLog("ERROR ==> server: close fdt_s[1], %m ");
+    }
+
+    //// Take the fdo_s for comunication between obstacle-server, position 9, 10
+    int fdo_s[2];
+    for (i = 9; i < 11; i++)
+    {
+        fdo_s[i - 9] = atoi(argv[i]);
+    }
+    writeLog("SERVER value of fdo_s are: %d %d ", fdo_s[0], fdo_s[1]);
+
+    // close the write file descriptor fdo_s[1], server only read from object
+    if (close(fdo_s[1]) < 0)
+    {
+        perror("server: close fdo_s[1]");
+        writeLog("ERROR ==> server: close fdo_s[1], %m ");
+    }
+
+    //////////////////////////////////// CONTORLLARE TUTTI  MESSAGGI DI ERRORE DA QUI IN AVANTI ///////////////////////
 
     // parte legata ad ncurses per il server
     posizione drone_pose;
@@ -161,6 +224,11 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+
+
+
+
+//// ---- Functions sections -----------------------------------------------------------
 WINDOW *create_new_window(int row, int col, int ystart, int xstart)
 {
     WINDOW *local_window = newwin(row, col, ystart, xstart);

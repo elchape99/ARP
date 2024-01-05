@@ -13,9 +13,37 @@
 #include <stdarg.h>
 #include <sys/wait.h>
 #include <ncurses.h>
+#include "arplib.h"
 
-// function for write in logfile
-void writeLog(const char *format, ...);
+/* function for write in logfile*/
+void writeLog(const char *format, ...)
+{
+
+    FILE *logfile = fopen("logfile.txt", "a");
+    if (logfile == NULL)
+    {
+        perror("server: error opening logfile");
+        exit(EXIT_FAILURE);
+    }
+    va_list args;
+    va_start(args, format);
+
+    time_t current_time;
+    time(&current_time);
+
+    fprintf(logfile, "%s => ", ctime(&current_time));
+    vfprintf(logfile, format, args);
+
+    va_end(args);
+    fflush(logfile);
+    if (fclose(logfile) == -1)
+    {
+        perror("fclose logfile");
+        writeLog("ERROR ==> server: fclose logfile");
+    }
+}
+
+
 // signals handler functions
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
@@ -35,7 +63,7 @@ int main(int argc, char *argv[])
     // write into logfile the pid
     writeLog("INPUT create with pid %d ", input_pid);
 
-    // configure the handler for sigusr1
+    //// configure the handler for SIGUSR1
     struct sigaction sa_usr1;
     sa_usr1.sa_sigaction = sigusr1Handler;
     sa_usr1.sa_flags = SA_SIGINFO;
@@ -46,45 +74,65 @@ int main(int argc, char *argv[])
         writeLog("==> ERROR ==> input: sigaction input %m ");
     }
 
-    // Manage pipe ----------------------------------------------------------
-    // pipe from master: fd2 are in position 1 and 2 of argv
+    ////---- Manage pipe ----------------------------------------------------------
+    
+    //// pipe from master: fd2 are in position 1 and 2 of argv
     int fd2[2];
     for (i = 1; i < 3; i++)
     {
         fd2[i - 1] = atoi(argv[i]);
     }
     writeLog("INPUT value of fd2 are: %d, %d ", fd2[0], fd2[1]);
+    
+    /* QUSTA PARTE DI CODICE DEVE SOSTITUIRE QUELLA SOTTO PIPE_FD, CORREGGERE TUTTI I NOMI NEL CODICE
+    //// Take pipe fdi_s for comunication between input->server, they are in position 3, 4
+    int fdi_s[2];
+    for (i = 3; i < 5; i++)
+    {
+        fdi_s[i - 3] = atoi(argv[i]);
+    }
+    // close the read file descriptor fdi_s[0], input only write in the pipe 
+    if (close(fdi_s[0]) < 0)
+    {
+        perror("input: close fdi_s[0]");
+        writeLog("==> ERROR ==> input: close fdi_s[0], %m ");
+    }*/
+
     // pipe_fd are in position 3 and 4 of argv[]
     int pipe_fd[2]; // recupero dall'argv i file descriptor delle pipe
     for (i = 3; i < 5; i++)
     {
         pipe_fd[i - 3] = atoi(argv[i]);
     }
-    writeLog("INPUT value of pipe_fd are: %d, %d ", pipe_fd[0], pipe_fd[1]);
+    writeLog("INPUT value of fdi_s are: %d, %d ", pipe_fd[0], pipe_fd[1]);
 
     printf("valore fd controllo(s,l): %d, %d\n", pipe_fd[1], pipe_fd[0]);
     fflush(stdout);
 
   
-    // nput need to write the pid inside the pipe
+    // input need to write the pid inside the pipe
     // close the read file descriptor fd2[0]
     if (close(fd2[0]) < 0)
     {
         perror("input: close fd2[0] ");
-        writeLog("ERROR ==> input: close fd2[0] %m ");
+        writeLog("==> ERROR ==> input: close fd2[0] %m ");
     }
     // write the pid inside the pipe
     if (write(fd2[1], &input_pid, sizeof(input_pid)) < 0)
     {
         perror("write fd2[1] input");
-        writeLog("ERROR ==> input: write fd2[1] %m ");
+        writeLog("==> ERROR ==> input: write fd2[1] %m ");
     }
     // close the write file descriptor fd2[1]
     if (close(fd2[1]) < 0)
     {
         perror("close fd2[1] input");
-        writeLog("ERROR ==> input: close fd2[1] %m ");
+        writeLog("==> ERROR ==> input: close fd2[1] %m ");
     }
+
+   
+
+
 
     char input_char; // definisco la variabile di input
 
@@ -269,33 +317,6 @@ int main(int argc, char *argv[])
     }
 
     return 0;
-}
-
-/* Function for write into logfile */
-void writeLog(const char *format, ...)
-{
-
-    FILE *logfile = fopen("logfile.txt", "a");
-    if (logfile < 0)
-    {
-        perror("Error opening logfile");
-        exit(EXIT_FAILURE);
-    }
-    va_list args;
-    va_start(args, format);
-
-    time_t current_time;
-    time(&current_time);
-
-    fprintf(logfile, "%s => ", ctime(&current_time));
-    vfprintf(logfile, format, args);
-
-    va_end(args);
-    fflush(logfile);
-    if (fclose(logfile) < 0)
-    {
-        perror(" fclose logfile: ");
-    }
 }
 
 void sigusr1Handler(int signum, siginfo_t *info, void *context)

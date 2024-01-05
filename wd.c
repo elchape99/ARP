@@ -11,16 +11,19 @@
 #include <signal.h>
 #include <time.h>
 #include <stdarg.h>
+#include "arplib.h"
 
 #define PROCESS_NUMBER 5; 
 
+/* function for write in logfile*/
 void writeLog(const char *format, ...)
 {
 
     FILE *logfile = fopen("logfile.txt", "a");
-    if (logfile < 0)
+    if (logfile == NULL)
     {
-        perror("Error opening logfile");
+        perror("server: error opening logfile");
+        exit(EXIT_FAILURE);
     }
     va_list args;
     va_start(args, format);
@@ -33,11 +36,13 @@ void writeLog(const char *format, ...)
 
     va_end(args);
     fflush(logfile);
-    if (fclose(logfile) < 0)
+    if (fclose(logfile) == -1)
     {
-        perror("fclose logfile:");
+        perror("fclose logfile");
+        writeLog("ERROR ==> server: fclose logfile");
     }
 }
+
 
 /*  when signal arrive counter --
     when wd send kill counter ++ */

@@ -13,6 +13,7 @@
 #include <time.h>
 #include <sys/wait.h>
 #include <stdarg.h>
+#include "arplib.h"
 
 #define PROCESS_NUMBER 5;
 
@@ -64,6 +65,15 @@ int spawn(const char *program, char **arg_list)
     }
 }
 
+char* convertFdString(int fd[]){
+    char str_fd[2][20];
+    for (int i = 0; i < 2; i++)
+    {
+        sprintf(str_fd[i], "%d", fd[i]);
+    }    
+    return str_fd;
+}
+
 int main()
 {
     /* The master spawn all the process  in oreder server, input, drone, target, obstacle, with watchdog at the end
@@ -112,7 +122,7 @@ int main()
         perror("master: pipe fd1");
         writeLog("==> ERROR ==> master: build pipe fd1, %m ");
     }
-    // convert fd pipe in str
+    // convert fd pipe in str    
     char str_fd1[2][20];
     for (i = 0; i < 2; i++)
     {
@@ -182,7 +192,7 @@ int main()
     writeLog("MASTER send to target the pipe fd4 file descriptor: %d, %d ", fd4[0], fd4[1]);
     writeLog("MASTER send to obstacle the pipe fd5 file descriptor: %d, %d ", fd5[0], fd5[1]);
 
-    // Pipe for communication between INPUT and SERVER 
+    //// Pipe for communication between INPUT and SERVER 
     int fdi_s[2];
     if ((pipe(fdi_s)) < 0)
     {
@@ -196,10 +206,51 @@ int main()
         sprintf(str_fdi_s[i], "%d", fdi_s[i]);
     }
 
+    //// Pipe for communication between DRONE and SERVER
+    int fdd_s[2];
+    if ((pipe(fdd_s)) < 0)
+    {
+        perror("master: pipe fdd_s ");
+        writeLog("==> ERROR ==> master: fdd_s, %m ");
+    }
+    // Convert fd in sting
+    char str_fdd_s[2][20];
+    for (i = 0; i < 2; i++)
+    {
+        sprintf(str_fdd_s[i], "%d", fdd_s[i]);
+    }
+
+    //// Pipe for communication between TARGET and SERVER
+    int fdt_s[2];
+    if ((pipe(fdt_s)) < 0)
+    {
+        perror("master: pipe fdt_s ");
+        writeLog("==> ERROR ==> master: fdt_s, %m ");
+    }
+    // Convert fd in sting
+    char str_fdt_s[2][20];
+    for (i = 0; i < 2; i++)
+    {
+        sprintf(str_fdt_s[i], "%d", fdt_s[i]);
+    }
+
+    //// Pipe for comunication between OBSTACLE and SERVER
+    int fdo_s[2];
+    if ((pipe(fdo_s)) < 0)
+    {
+        perror("master: pipe fdo_s ");
+        writeLog("==> ERROR ==> master: fdo_s, %m ");
+    }
+    // Convert fd in sting
+    char str_fdo_s[2][20];
+    for (i = 0; i < 2; i++)
+    {
+        sprintf(str_fdo_s[i], "%d", fdo_s[i]);
+    }
+
     // --- SERVER process -----------------------------------------------------------------
     // Server process is execute with konsole so, the child_pid(correspond to the pid of the kosole) and the child_pid_received( correspod to the pid of process)
-
-    char *arg_list_server[] = {"konsole", "-e", "./server", str_fd1[0], str_fd1[1], NULL};
+    char *arg_list_server[] = {"konsole", "-e", "./server", str_fd1[0], str_fd1[1], str_fdi_s[0], str_fdi_s[1], str_fdd_s[0], str_fdd_s[1], str_fdt_s[0], str_fdt_s[1], str_fdo_s[0], str_fdo_s[1], NULL};
     child_pids[0] = spawn("konsole", arg_list_server);
     writeLog("MASTER spawn server with pid: %d ", child_pids[0]);
     // close the write file descriptor
@@ -244,7 +295,7 @@ int main()
     writeLog("MASTER send to input fdi_s with value: %d, %d ", fdi_s[0], fdi_s[1]);
 
     // --- DRONE process -----------------------------------------------------------------------
-    char *arg_list_drone[] = {"Konsole", "-e", "./drone", str_fdi_s[0], str_fdi_s[1], str_fd3[0], str_fd3[1], NULL};
+    char *arg_list_drone[] = {"Konsole", "-e", "./drone", str_fd3[0], str_fd3[1], str_fdd_s[0], str_fdd_s[1], NULL};
     child_pids[2] = spawn("konsole", arg_list_drone);
     writeLog("MASTER spawn drone with pid: %d ", child_pids[2]);
     // close the write file descriptor
@@ -266,7 +317,7 @@ int main()
     }
 
     //---- TARGET process -----------------------------------------------------------
-    char *arg_list_target[] = {"Konsole", "-e", "./target", str_fd4[0], str_fd4[1], NULL};
+    char *arg_list_target[] = {"Konsole", "-e", "./target", str_fd4[0], str_fd4[1], str_fdt_s[0], str_fdt_s[1], NULL};
     child_pids[3] = spawn("konsole", arg_list_target);
     writeLog("MASTER spawn target with pid: %d ", child_pids[3]);
     // close the write file descriptor
@@ -288,7 +339,7 @@ int main()
     }
 
     //---- OBSTACLE process ----------------------------------------------------------------
-    char *arg_list_obstacle[] = {"Konsole", "-e", "./obstacle", str_fd5[0], str_fd5[1], NULL};
+    char *arg_list_obstacle[] = {"Konsole", "-e", "./obstacle", str_fd5[0], str_fd5[1], str_fdo_s[0], str_fdo_s[1], NULL};
     child_pids[4] = spawn("konsole", arg_list_obstacle);
     writeLog("MASTER spawn obstacle with pid: %d ", child_pids[4]);
     // close the write file descriptor

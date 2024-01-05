@@ -13,12 +13,40 @@
 #include <stdarg.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include "arplib.h"
+
 
 #define INP_NUM 8
-// size of the shaerd memory
 
 /* function for write in logfile*/
-void writeLog(const char *format, ...);
+void writeLog(const char *format, ...)
+{
+
+    FILE *logfile = fopen("logfile.txt", "a");
+    if (logfile == NULL)
+    {
+        perror("server: error opening logfile");
+        exit(EXIT_FAILURE);
+    }
+    va_list args;
+    va_start(args, format);
+
+    time_t current_time;
+    time(&current_time);
+
+    fprintf(logfile, "%s => ", ctime(&current_time));
+    vfprintf(logfile, format, args);
+
+    va_end(args);
+    fflush(logfile);
+    if (fclose(logfile) == -1)
+    {
+        perror("fclose logfile");
+        writeLog("ERROR ==> server: fclose logfile");
+    }
+}
+
+
 /* signal handler functions, when receive a ignal from watchdog sena bach a signal*/
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
@@ -64,9 +92,9 @@ int main(int argc, char *argv[])
     // pipe for writing the pid to watchdog
     int fd3[2];
     // file descritor are in position 3 and 4 of argv[]
-    for (i = 3; i < 5; i++)
+    for (i = 1; i < 3; i++)
     {
-        fd3[i - 3] = atoi(argv[i]);
+        fd3[i - 1] = atoi(argv[i]);
     }
     writeLog("DRONE riceived fd1: %d, %d", fd3[0], fd3[1]);
     // close the read file descriptor fd2[0]
@@ -87,15 +115,14 @@ int main(int argc, char *argv[])
         perror("close fd3[1] drone");
         writeLog("ERROR ==> close fd3[1] drone %m ");
     }
-    // pipe for communication with input process
-    // file descriptor are in position 1 and 2 of argv[]
-    int pipe_fd[2];
-    for (i = 1; i < 3; i++)
+    //// pipe for comunication between drone <-> server, are in position 3, 4
+    int fdd_s[2];
+    // file descritor are in position 3 and 4 of argv[]
+    for (i = 3; i < 5; i++)
     {
-        pipe_fd[i - 1] = atoi(argv[i]);
+        fdd_s[i - 3] = atoi(argv[i]);
     }
-    printf("valore fd controllo(s,l): %d, %d\n", pipe_fd[1], pipe_fd[0]);
-    fflush(stdout);
+    writeLog("SERVER value of fdd_s are: %d %d ", fdd_s[0], fdd_s[1]);
 
     // inizializzazione delle variabili per la dinamica --------------------------------------------------------------
     double *input_vect = malloc(sizeof(double) * INP_NUM); // riservo la memoria per il vettore di input
@@ -125,14 +152,15 @@ int main(int argc, char *argv[])
     // ciclo infinito per ricever input dalla tastiera
     while (1)
     {
+        
         // ridefinisco ad ogni ciclo --> azione select retVal_sel == 0
         FD_ZERO(&read_fd);
-        FD_SET(pipe_fd[0], &read_fd); // definisco il set dei fd da controllare
+        FD_SET(fdd_s[0], &read_fd); // definisco il set dei fd da controllare
 
         time_sel.tv_sec = 0; // timeout settatto a 0.5 secondi
         time_sel.tv_usec = 30000;
 
-        if ((retVal_sel = select(pipe_fd[0] + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
+        if ((retVal_sel = select(fdd_s[0] + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
         {
             perror("errore select: "); // controllo errori
         }
@@ -143,7 +171,7 @@ int main(int argc, char *argv[])
         }
         else
         { // nuovi dati disponibili
-            if ((retVal_read = read(pipe_fd[0], &ch, 1)) < 0)
+            if ((retVal_read = read(fdd_s[0], &ch, 1)) < 0)
             {
                 perror("errore read"); // controllo errore read
             }
@@ -182,45 +210,21 @@ int main(int argc, char *argv[])
        
     }
 
-    // close the read file descriptor for pipe_fd
-    if (close(pipe_fd[0]) < 0)
+    // close the read file descriptor for fdd_s
+    if (close(fdd_s[0]) < 0)
     {
-        perror("close pipe_fd[0] drone");
-        writeLog("ERROR ==> close pipe_fd[0] drone %m ");
+        perror("drone: close fdd_s[0]");
+        writeLog("==> ERROR ==> drone: clse fdd_S[0] %m ");
     }
     // close the write file descriptor fd2[1]
-    if (close(pipe_fd[1]) < 0)
+    if (close(fdd_s[1]) < 0)
     {
-        perror("close pipe_fd[1] drone");
-        writeLog("ERROR ==> close pipe_fd[1] drone %m ");
+        perror("drone: close fds_s[1]");
+        writeLog("==> ERROR ==> drone: close fdd_S[1] %m ");
     }
     return 0;
 }
 
-void writeLog(const char *format, ...)
-{
-    FILE *logfile = fopen("logfile.txt", "a");
-    if (logfile < 0)
-    {
-        perror("Error opening logfile");
-        exit(EXIT_FAILURE);
-    }
-    va_list args;
-    va_start(args, format);
-
-    time_t current_time;
-    time(&current_time);
-
-    fprintf(logfile, "%s => ", ctime(&current_time));
-    vfprintf(logfile, format, args);
-
-    va_end(args);
-    fflush(logfile);
-    if (fclose(logfile) < 0)
-    {
-        perror("fclose logfile: ");
-    }
-}
 
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
 {
