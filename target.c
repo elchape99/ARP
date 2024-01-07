@@ -17,6 +17,8 @@
 #include <sys/ipc.h>
 #include "arplib.h"
 
+MAX_TARG_ARR_SIZE = 10;
+
 // Function header
 void writeLog(const char *format, ...);
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
@@ -81,6 +83,25 @@ int main(int argc, char *argv[])
         writeLog("==> ERROR ==> target: close fdt_s[0], %m ");
     }
 
+    double set_of_target [MAX_TARG_ARR_SIZE][2];
+
+    for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
+    {
+        set_of_target[i][0] = (double)rand() / RAND_MAX;
+        set_of_target[i][1] = (double)rand() / RAND_MAX;
+    }
+    
+
+    if (write(fdo_s[1], set_of_target, sizeof(double) * MAX_TARG_ARR_SIZE * 2) == -1)
+    {
+        perror("obstacle: error write fdo_s[1]");
+        writeLog("==> ERROR ==> obstacle: write fdo_s[1], %m ");
+    }
+    for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
+    {
+        printf("%f, %f \n", set_of_target[i][0], set_of_target[i][1]);
+        fflush(stdout);
+    }
 
     while (1)
     {

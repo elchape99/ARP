@@ -17,6 +17,7 @@
 
 #define DRONE_ICON 'X'
 MAX_OBST_ARR_SIZE = 10;
+MAX_TARG_ARR_SIZE = 10;
 
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
@@ -176,7 +177,6 @@ int main(int argc, char *argv[])
         drone_pose_old.Ypos = 0.0;
         drone_pose_old.Xpos = 0.0;
     */
-    Position obstacle_position;
     /*
         WINDOW *map_window; // definizione puntatore alla mappa
         int Srow, Scol;     // righe e colonne massime dello schermo
@@ -206,23 +206,48 @@ int main(int argc, char *argv[])
         */
     double obj_pos[2];
     double set_of_obstacle[MAX_OBST_ARR_SIZE][2];
+    double set_of_target[MAX_TARG_ARR_SIZE][2];
+    // read the set of obstacle comesfrom obstacle process  
+    if (read(fdt_s[0], set_of_target, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
+    {
+        perror("server: read fdt_s[0]");
+        writeLog("==> ERROR ==> server:read fdt_s[0], %m ");
+    }
 
     while (1)
-    {
+    {    
+
+        // fare select 
+
+
+        // pipe with the input force 
 
 
 
-        // read the set of obstacle comesfrom obstacle process  
+        // read the set of obstacle
         if (read(fdo_s[0], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
         {
             perror("server: read fdo_s[0]");
             writeLog("==> ERROR ==> server:read fdo_s[0], %m ");
         }
-         for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+        // trovare le forze dei vari ostacoli 
+
+        // trovare forze target 
+
+
+
+
+
+        for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
         {
             printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
             fflush(stdout);
-        }
+        } 
+        for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+        {
+            printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
+            fflush(stdout);
+        } 
         /*
         if ((int)drone_pose.Ypos == (int)drone_pose_old.Ypos && (int)drone_pose.Xpos == (int)drone_pose_old.Xpos)
         {

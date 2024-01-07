@@ -16,16 +16,13 @@
 #include "arplib.h"
 
 MAX_OBST_ARR_SIZE = 10;
+// Seconds of upgrade of the obstacles
+N = 5; 
 
 //-- Functions header --------------------------------------------
 void writeLog(const char *format, ...);
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
-typedef struct
-{
-    double xPos;
-    double yPos;
-} Position;
 
 int main(int argc, char *argv[])
 {
@@ -93,6 +90,7 @@ int main(int argc, char *argv[])
 
     // initialize the time on random generator
     srand(time(NULL));
+    
     double set_of_obstacle[MAX_OBST_ARR_SIZE][2];
     while (1)
     {
@@ -114,7 +112,7 @@ int main(int argc, char *argv[])
             fflush(stdout);
         }
         // generat obstacle every seconds
-        sleep(1);
+        sleep(N);
     }
 
     // close the write file descriptor fdo_s
