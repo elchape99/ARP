@@ -53,6 +53,8 @@ void destroy_win(WINDOW *local_win);
 void print_on_button(WINDOW *pointer, char icon, int row, int col);
 void case_execution(char input_char, int PRy, int PRx, WINDOW *print_pointer, WINDOW *color_pointer, int write_fd, int read_fd);
 
+int **generate_wind_info(int Srow, int Scol);
+
 // global variables
 pid_t wd;
 
@@ -117,7 +119,7 @@ int main(int argc, char *argv[])
         writeLog("==> ERROR ==> input: close fdi_s[0], %m ");
     }
    
-
+    ////---- Manage pipe end --------------------------------------------------------
 
     char input_char = 'a'; // definisco la variabile di input
 
@@ -142,7 +144,14 @@ int main(int argc, char *argv[])
     WINDOW *down_left_butt;
     WINDOW *down_right_butt;
 
-    int times_pressed_vect[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    WINDOW *quit_butt;
+
+    char icon_string[12] = {'-', '-', 'q', 'W', 'E', 'R', 'S', 'D', 'F', 'X', 'C', 'V'};
+    int button_number[12];
+    for (i = 0; i < 12; i++){button_number[i] = 0;}
+    WINDOW *wind_pointer_array[12] = {external_window, printing_window, quit_butt, up_left_butt, up_butt, up_right_butt, left_butt, central_butt, right_butt, down_left_butt, down_butt, down_right_butt};
+
+    int wind_info[12][4];
 
     // ncurses initialization row, attivo la modalità ncurses
     initscr();
@@ -335,6 +344,57 @@ void destroy_win(WINDOW *local_win)
     wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
     wrefresh(local_win);
     delwin(local_win);
+}
+
+int **generate_wind_info(int Srow, int Scol){
+    // external_window, printing_window, quit_butt, up_left_butt, up_butt, up_right_butt, 
+    //left_butt, central_butt, right_butt, down_left_butt, down_butt, down_right_butt
+    int **wind_info = (int **)malloc(12 * sizeof(int *));
+
+    for (int i = 0; i < 12; i++)
+    {
+        wind_info[i] = (int *)malloc(4 * sizeof(int));
+    }
+
+    // external window
+    wind_info[0][0] = (int)(Srow * 0.9);
+    wind_info[0][1] = (int)(Scol * 0.8);
+    wind_info[0][2] = 0;
+    wind_info[0][3] = (int)((Scol - wind_info[0][1]) / 2);
+
+    // printing window
+    wind_info[1][0] = (int)(Srow * 0.1);
+    wind_info[1][1] = (int)(Scol * 0.8);
+    wind_info[1][2] = Srow - wind_info[1][0];
+    wind_info[1][3] = (int)((Scol - wind_info[1][1]) / 2);
+
+    // quit button
+    wind_info[2][0] = (int)(Srow * 0.1);
+    wind_info[2][1] = (int)(Scol * 0.1);
+    wind_info[2][2] = 0
+    wind_info[2][3] = (int)((Scol - wind_info[2][1];) / 2);
+   
+    // up left button
+
+    // up button
+
+    // up right button
+
+    // left button
+
+    // central button
+
+    // right button 
+
+    // down left button
+
+    // down button
+
+    // down right button
+
+
+
+    return wind_info;
 }
 
 void case_execution(char input_char, int PRy, int PRx, WINDOW *print_pointer, WINDOW *color_pointer, int write_fd, int read_fd)
