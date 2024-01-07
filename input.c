@@ -84,32 +84,6 @@ int main(int argc, char *argv[])
     }
     writeLog("INPUT value of fd2 are: %d, %d ", fd2[0], fd2[1]);
     
-    /* QUSTA PARTE DI CODICE DEVE SOSTITUIRE QUELLA SOTTO PIPE_FD, CORREGGERE TUTTI I NOMI NEL CODICE
-    //// Take pipe fdi_s for comunication between input->server, they are in position 3, 4
-    int fdi_s[2];
-    for (i = 3; i < 5; i++)
-    {
-        fdi_s[i - 3] = atoi(argv[i]);
-    }
-    // close the read file descriptor fdi_s[0], input only write in the pipe 
-    if (close(fdi_s[0]) < 0)
-    {
-        perror("input: close fdi_s[0]");
-        writeLog("==> ERROR ==> input: close fdi_s[0], %m ");
-    }*/
-
-    // pipe_fd are in position 3 and 4 of argv[]
-    int pipe_fd[2]; // recupero dall'argv i file descriptor delle pipe
-    for (i = 3; i < 5; i++)
-    {
-        pipe_fd[i - 3] = atoi(argv[i]);
-    }
-    writeLog("INPUT value of fdi_s are: %d, %d ", pipe_fd[0], pipe_fd[1]);
-
-    printf("valore fd controllo(s,l): %d, %d\n", pipe_fd[1], pipe_fd[0]);
-    fflush(stdout);
-
-  
     // input need to write the pid inside the pipe
     // close the read file descriptor fd2[0]
     if (close(fd2[0]) < 0)
@@ -129,12 +103,23 @@ int main(int argc, char *argv[])
         perror("close fd2[1] input");
         writeLog("==> ERROR ==> input: close fd2[1] %m ");
     }
-
+    
+    /// Take pipe fdi_s for comunication between input->server, they are in position 3, 4
+    int fdi_s[2];
+    for (i = 3; i < 5; i++)
+    {
+        fdi_s[i - 3] = atoi(argv[i]);
+    }
+    // close the read file descriptor fdi_s[0], input only write in the pipe 
+    if (close(fdi_s[0]) < 0)
+    {
+        perror("input: close fdi_s[0]");
+        writeLog("==> ERROR ==> input: close fdi_s[0], %m ");
+    }
    
 
 
-
-    char input_char; // definisco la variabile di input
+    char input_char = 'a'; // definisco la variabile di input
 
     // definizione delle variabili di ncurses ------
     int Srow, Scol, SrowNew, ScolNew;
@@ -210,37 +195,37 @@ int main(int argc, char *argv[])
         switch (input_char)
         {
         case 'w':
-            case_execution(input_char, PRy, PRx, printing_window, up_left_butt, pipe_fd[1], pipe_fd[0]);
+            case_execution(input_char, PRy, PRx, printing_window, up_left_butt, fdi_s[1], fdi_s[0]);
             break;
         case 'e':
-            case_execution(input_char, PRy, PRx, printing_window, up_butt, pipe_fd[1], pipe_fd[0]);
+            case_execution(input_char, PRy, PRx, printing_window, up_butt, fdi_s[1], fdi_s[0]);
             break;
         case 'r':
-            case_execution(input_char, PRy, PRx, printing_window, up_right_butt, pipe_fd[1], pipe_fd[0]);
+            case_execution(input_char, PRy, PRx, printing_window, up_right_butt, fdi_s[1], fdi_s[0]);
             break;
         case 'f':
-            case_execution(input_char, PRy, PRx, printing_window, right_butt, pipe_fd[1], pipe_fd[0]);
+            case_execution(input_char, PRy, PRx, printing_window, right_butt, fdi_s[1], fdi_s[0]);
             break;
         case 'v':
-            case_execution(input_char, PRy, PRx, printing_window, down_right_butt, pipe_fd[1], pipe_fd[0]);
+            case_execution(input_char, PRy, PRx, printing_window, down_right_butt, fdi_s[1], fdi_s[0]);
             break;
         case 'c':
-            case_execution(input_char, PRy, PRx, printing_window, down_butt, pipe_fd[1], pipe_fd[0]);
+            case_execution(input_char, PRy, PRx, printing_window, down_butt, fdi_s[1], fdi_s[0]);
             break;
         case 'x':
-            case_execution(input_char, PRy, PRx, printing_window, down_left_butt, pipe_fd[1], pipe_fd[0]);
+            case_execution(input_char, PRy, PRx, printing_window, down_left_butt, fdi_s[1], fdi_s[0]);
             break;
         case 's':
-            case_execution(input_char, PRy, PRx, printing_window, left_butt, pipe_fd[1], pipe_fd[0]);
+            case_execution(input_char, PRy, PRx, printing_window, left_butt, fdi_s[1], fdi_s[0]);
             break;
         case 'd':
-            case_execution(input_char, PRy, PRx, printing_window, central_butt, pipe_fd[1], pipe_fd[0]);
+            case_execution(input_char, PRy, PRx, printing_window, central_butt, fdi_s[1], fdi_s[0]);
             break;
         case 'q':
-            case_execution(input_char, PRy, PRx, printing_window, central_butt, pipe_fd[1], pipe_fd[0]);
+            case_execution(input_char, PRy, PRx, printing_window, central_butt, fdi_s[1], fdi_s[0]);
             break;
         default:
-            case_execution('A', PRy, PRx, printing_window, central_butt, pipe_fd[1], pipe_fd[0]);
+            case_execution('A', PRy, PRx, printing_window, central_butt, fdi_s[1], fdi_s[0]);
             break;
         }
         getmaxyx(stdscr, SrowNew, ScolNew);
@@ -304,21 +289,22 @@ int main(int argc, char *argv[])
 
     // termination row
     endwin();
-    //close the pipe file descriptor
-    if (close(pipe_fd[0]) < 0)
+    // close the write file descriptor
+    if (close(fdi_s[1]) < 0)
     {
-        perror("close pipe_fd[0] ");
-        writeLog("ERROR ==> close pipe_fd[0] input %m ");
-    }
-    if (close(pipe_fd[1]) < 0)
-    {
-        perror("close pipe_fd[1] ");
-        writeLog("ERROR ==> close pipe_fd[1] input %m ");
+        perror("input: close fdi_s[1] ");
+        writeLog("ERROR ==> input: close fdi_s[1]  %m ");
     }
 
     return 0;
 }
 
+
+
+
+
+
+////--- Function section -------------------------------------------------------
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
 {
     if (signum == SIGUSR1)

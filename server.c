@@ -16,6 +16,7 @@
 #include "arplib.h"
 
 #define DRONE_ICON 'X'
+MAX_OBST_ARR_SIZE = 10;
 
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
@@ -44,7 +45,6 @@ void writeLog(const char *format, ...)
         writeLog("ERROR ==> server: fclose logfile");
     }
 }
-
 // Inserire perror nella kill
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
 {
@@ -65,7 +65,7 @@ typedef struct
 {
     double Xpos;
     double Ypos;
-}posizione;
+} Position;
 
 int main(int argc, char *argv[])
 {
@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
     {
         perror("sigaction");
         writeLog("ERROR ==> server: sigaction SIGUSR1 %m ");
-
 
         return -1;
     }
@@ -109,15 +108,12 @@ int main(int argc, char *argv[])
     {
         perror("server: write fd1[1],");
         writeLog("ERROR ==> server, write fd1[1] %m ");
-    }    
+    }
     if (close(fd1[1]) < 0)
     {
         perror("server: close fd1[1]");
         writeLog("ERROR ==> server: close fd1[1], %m ");
     }
-
-
-
 
     //--Manage pipe----------------------------------------------------------
 
@@ -135,14 +131,13 @@ int main(int argc, char *argv[])
     }
     writeLog("SERVER value of fdi_s are: %d %d ", fdi_s[0], fdi_s[1]);
 
-
     //// Take the fdd_s for comunication drone-server, fdd_s are in positions 5, 6
     int fdd_s[2];
     for (i = 5; i < 7; i++)
     {
         fdd_s[i - 5] = atoi(argv[i]);
     }
-    // This pipe is usefull for send and receive data from server to drone (is used for dynamics) 
+    // This pipe is usefull for send and receive data from server to drone (is used for dynamics)
     writeLog("SERVER value of fdd_s are: %d %d ", fdd_s[0], fdd_s[1]);
 
     //// Take the fdt_s for comunication between targer-server, position 7, 8
@@ -174,36 +169,61 @@ int main(int argc, char *argv[])
         perror("server: close fdo_s[1]");
         writeLog("ERROR ==> server: close fdo_s[1], %m ");
     }
+    /*
+        // parte legata ad ncurses per il server
+        Position drone_pose;
+        Position drone_pose_old;
+        drone_pose_old.Ypos = 0.0;
+        drone_pose_old.Xpos = 0.0;
+    */
+    Position obstacle_position;
+    /*
+        WINDOW *map_window; // definizione puntatore alla mappa
+        int Srow, Scol;     // righe e colonne massime dello schermo
+        int rowSH, colSH;
+        // initialization row
+        initscr();
+        raw();
+        cbreak();
+        noecho();
+        keypad(stdscr, TRUE);
 
-    //////////////////////////////////// CONTORLLARE TUTTI  MESSAGGI DI ERRORE DA QUI IN AVANTI ///////////////////////
+        getmaxyx(stdscr, Srow, Scol);
+        rowSH = Srow / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
+        colSH = Scol / 2;
 
-    // parte legata ad ncurses per il server
-    posizione drone_pose;
-    posizione drone_pose_old;
-    drone_pose_old.Ypos = 0.0;
-    drone_pose_old.Xpos = 0.0;
+        // creo la finestra della mappa
+        // map_window = create_new_window(Srow, Scol, 0, 0);
+        // move_drone_icon(rowSH - (int)pose->Ypos, colSH + (int)pos->Xpos, map_window);
+        raw();
+        cbreak();
+        noecho();
+        keypad(stdscr, TRUE);
 
-    WINDOW *map_window; // definizione puntatore alla mappa
-    int Srow, Scol;     // righe e colonne massime dello schermo
-    int rowSH, colSH;
-    // initialization row
-    initscr();
-    raw();
-    cbreak();
-    noecho();
-    keypad(stdscr, TRUE);
-
-    getmaxyx(stdscr, Srow, Scol);
-    rowSH = Srow / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
-    colSH = Scol / 2;
-
-    // creo la finestra della mappa
-    // map_window = create_new_window(Srow, Scol, 0, 0);
-    // move_drone_icon(rowSH - (int)pose->Ypos, colSH + (int)pos->Xpos, map_window);
+        getmaxyx(stdscr, Srow, Scol);
+        rowSH = Srow / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
+        colSH = Scol / 2;
+        */
+    double obj_pos[2];
+    double set_of_obstacle[MAX_OBST_ARR_SIZE][2];
 
     while (1)
     {
 
+
+
+        // read the set of obstacle comesfrom obstacle process  
+        if (read(fdo_s[0], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
+        {
+            perror("server: read fdo_s[0]");
+            writeLog("==> ERROR ==> server:read fdo_s[0], %m ");
+        }
+         for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+        {
+            printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
+            fflush(stdout);
+        }
+        /*
         if ((int)drone_pose.Ypos == (int)drone_pose_old.Ypos && (int)drone_pose.Xpos == (int)drone_pose_old.Xpos)
         {
             continue;
@@ -215,18 +235,11 @@ int main(int argc, char *argv[])
 
         drone_pose_old.Ypos = drone_pose.Ypos;
         drone_pose_old.Xpos = drone_pose.Xpos;
-
-        // usleep(50000);
-        //  printf("Posizione: (%lf, %lf)\n", pos->Xpos, pos->Ypos);
-        //  fflush(stdout);
+        */
     }
 
     return 0;
 }
-
-
-
-
 
 //// ---- Functions sections -----------------------------------------------------------
 WINDOW *create_new_window(int row, int col, int ystart, int xstart)

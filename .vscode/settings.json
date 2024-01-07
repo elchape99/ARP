@@ -1,5 +1,12 @@
 {
     "files.associations": {
         "ncurses.h": "c"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled",
+    "editor.columnSelection": false,
+    "editor.inlineSuggest.suppressSuggestions": false,
+    "editor.quickSuggestions": {
+        "strings": "on"
+    },
+    "workbench.settings.openDefaultSettings": true
 }

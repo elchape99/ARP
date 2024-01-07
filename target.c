@@ -1,3 +1,5 @@
+//// This process generate 20 target. generate 20 random value from 0 to 1. And send all the value by pipe to server
+
 #include <ncurses.h>
 #include <string.h>
 #include <fcntl.h>
@@ -15,53 +17,9 @@
 #include <sys/ipc.h>
 #include "arplib.h"
 
-/* function for write in logfile*/
-void writeLog(const char *format, ...)
-{
-
-    FILE *logfile = fopen("logfile.txt", "a");
-    if (logfile == NULL)
-    {
-        perror("server: error opening logfile");
-        exit(EXIT_FAILURE);
-    }
-    va_list args;
-    va_start(args, format);
-
-    time_t current_time;
-    time(&current_time);
-
-    fprintf(logfile, "%s => ", ctime(&current_time));
-    vfprintf(logfile, format, args);
-
-    va_end(args);
-    fflush(logfile);
-    if (fclose(logfile) == -1)
-    {
-        perror("fclose logfile");
-        writeLog("ERROR ==> server: fclose logfile");
-    }
-}
-
-
-// Inserire perror nella kill
-void sigusr1Handler(int signum, siginfo_t *info, void *context)
-{
-    if (signum == SIGUSR1)
-    {
-        /*send a signal SIGUSR2 to watchdog */
-        // printf("SERVER sig handler");
-        if (kill(info->si_pid, SIGUSR2) == 0)
-        {
-            writeLog("TARGET: pid %d, received signal from wd pid: %d ", getpid(), info->si_pid);
-        }
-        else
-        {
-            perror("target: kill SIGUSR2 ");
-            writeLog("==> ERROR ==> target: kill SIGUSR2 %m");
-        }
-    }
-}
+// Function header
+void writeLog(const char *format, ...);
+void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
 int main(int argc, char *argv[])
 {
@@ -119,13 +77,67 @@ int main(int argc, char *argv[])
     // close the read file descriptor, target only write data in the pipe
     if (close(fdt_s[0]) == -1)
     {
-        perror("target: close ");
-        writeLog("==> ERROR ==> target: close fdt_s[1], %m ");
+        perror("target: close fdt_s[0] ");
+        writeLog("==> ERROR ==> target: close fdt_s[0], %m ");
     }
-    int x = 4;
+
 
     while (1)
     {
         sleep(1);
+    }
+    // close the write file descriptor, target only write data in the pipe
+    if (close(fdt_s[1]) == -1)
+    {
+        perror("target: close fdt_s[1] ");
+        writeLog("==> ERROR ==> target: close fdt_s[1], %m ");
+    }
+}
+
+////---- Functions section -----------------------------------------------------------
+/* function for write in logfile*/
+void writeLog(const char *format, ...)
+{
+
+    FILE *logfile = fopen("logfile.txt", "a");
+    if (logfile == NULL)
+    {
+        perror("server: error opening logfile");
+        exit(EXIT_FAILURE);
+    }
+    va_list args;
+    va_start(args, format);
+
+    time_t current_time;
+    time(&current_time);
+
+    fprintf(logfile, "%s => ", ctime(&current_time));
+    vfprintf(logfile, format, args);
+
+    va_end(args);
+    fflush(logfile);
+    if (fclose(logfile) == -1)
+    {
+        perror("fclose logfile");
+        writeLog("ERROR ==> server: fclose logfile");
+    }
+}
+
+// Inserire perror nella kill
+void sigusr1Handler(int signum, siginfo_t *info, void *context)
+{
+    if (signum == SIGUSR1)
+    {
+        /*send a signal SIGUSR2 to watchdog */
+        // printf("SERVER sig handler");
+        if (kill(info->si_pid, SIGUSR2) == 0)
+        {
+            writeLog("TARGET: pid %d, received signal from wd pid: %d ", getpid(), info->si_pid);
+        }
+        else
+        {
+            perror("target: kill SIGUSR2 ");
+            writeLog("==> ERROR ==> target: kill SIGUSR2 %m");
+        }
     }
 }

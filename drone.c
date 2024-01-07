@@ -18,34 +18,10 @@
 
 #define INP_NUM 8
 
+/////--- Functions heder --------------------------------------------------------------------------------------
+
 /* function for write in logfile*/
-void writeLog(const char *format, ...)
-{
-
-    FILE *logfile = fopen("logfile.txt", "a");
-    if (logfile == NULL)
-    {
-        perror("server: error opening logfile");
-        exit(EXIT_FAILURE);
-    }
-    va_list args;
-    va_start(args, format);
-
-    time_t current_time;
-    time(&current_time);
-
-    fprintf(logfile, "%s => ", ctime(&current_time));
-    vfprintf(logfile, format, args);
-
-    va_end(args);
-    fflush(logfile);
-    if (fclose(logfile) == -1)
-    {
-        perror("fclose logfile");
-        writeLog("ERROR ==> server: fclose logfile");
-    }
-}
-
+void writeLog(const char *format, ...);
 
 /* signal handler functions, when receive a ignal from watchdog sena bach a signal*/
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
@@ -61,13 +37,11 @@ double *velocity(double Force, double initial_velocity, double *new_vel);     //
 double *position(double Velocity, double initial_position, double *new_pose); // data una velocità calcola posizione sull'asse
 
 // Define the struct for the drone position
-struct DronePos
+typedef struct
 {
     double xPos;
     double yPos;
-};
-
-#define SHM_SIZE sizeof(struct DronePos) // Dimensione della struttura
+}DronePos;
 
 int main(int argc, char *argv[])
 {
@@ -149,10 +123,9 @@ int main(int argc, char *argv[])
 
   
 
-    // ciclo infinito per ricever input dalla tastiera
+    // ciclo infinito per ricever input dal server
     while (1)
-    {
-        
+    {        
         // ridefinisco ad ogni ciclo --> azione select retVal_sel == 0
         FD_ZERO(&read_fd);
         FD_SET(fdd_s[0], &read_fd); // definisco il set dei fd da controllare
@@ -162,7 +135,8 @@ int main(int argc, char *argv[])
 
         if ((retVal_sel = select(fdd_s[0] + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
         {
-            perror("errore select: "); // controllo errori
+            perror("drone: error select: "); // controllo errori
+
         }
         else if (retVal_sel == 0)
         {
@@ -211,18 +185,50 @@ int main(int argc, char *argv[])
     }
 
     // close the read file descriptor for fdd_s
-    if (close(fdd_s[0]) < 0)
+    if (close(fdd_s[0]) == -1)
     {
         perror("drone: close fdd_s[0]");
         writeLog("==> ERROR ==> drone: clse fdd_S[0] %m ");
     }
     // close the write file descriptor fd2[1]
-    if (close(fdd_s[1]) < 0)
+    if (close(fdd_s[1]) == -1)
     {
         perror("drone: close fds_s[1]");
         writeLog("==> ERROR ==> drone: close fdd_S[1] %m ");
     }
     return 0;
+}
+
+
+
+
+////--- Function section --------------------------------------------------------------
+
+void writeLog(const char *format, ...)
+{
+
+    FILE *logfile = fopen("logfile.txt", "a");
+    if (logfile == NULL)
+    {
+        perror("server: error opening logfile");
+        exit(EXIT_FAILURE);
+    }
+    va_list args;
+    va_start(args, format);
+
+    time_t current_time;
+    time(&current_time);
+
+    fprintf(logfile, "%s => ", ctime(&current_time));
+    vfprintf(logfile, format, args);
+
+    va_end(args);
+    fflush(logfile);
+    if (fclose(logfile) == -1)
+    {
+        perror("fclose logfile");
+        writeLog("ERROR ==> server: fclose logfile");
+    }
 }
 
 

@@ -15,52 +15,17 @@
 #include <sys/ipc.h>
 #include "arplib.h"
 
-/* function for write in logfile*/
-void writeLog(const char *format, ...)
+MAX_OBST_ARR_SIZE = 10;
+
+//-- Functions header --------------------------------------------
+void writeLog(const char *format, ...);
+void sigusr1Handler(int signum, siginfo_t *info, void *context);
+
+typedef struct
 {
-
-    FILE *logfile = fopen("logfile.txt", "a");
-    if (logfile == NULL)
-    {
-        perror("server: error opening logfile");
-        exit(EXIT_FAILURE);
-    }
-    va_list args;
-    va_start(args, format);
-
-    time_t current_time;
-    time(&current_time);
-
-    fprintf(logfile, "%s => ", ctime(&current_time));
-    vfprintf(logfile, format, args);
-
-    va_end(args);
-    fflush(logfile);
-    if (fclose(logfile) == -1)
-    {
-        perror("fclose logfile");
-        writeLog("ERROR ==> server: fclose logfile");
-    }
-}
-
-
-// Inserire perror nella kill
-void sigusr1Handler(int signum, siginfo_t *info, void *context)
-{
-    if (signum == SIGUSR1)
-    {
-        /*send a signal SIGUSR2 to watchdog */
-        if (kill(info->si_pid, SIGUSR2) == 0)
-        {
-            writeLog("OBSTACLE: pid %d, received signal from wd pid: %d ", getpid(), info->si_pid);
-        }
-        else
-        {
-            perror("obstacle: kill SIGUSR2 ");
-            writeLog("==> ERROR ==> obstacle: kill SIGUSR2 %m ");
-        }
-    }
-}
+    double xPos;
+    double yPos;
+} Position;
 
 int main(int argc, char *argv[])
 {
@@ -68,6 +33,7 @@ int main(int argc, char *argv[])
     int i;
     pid_t obstacle_pid = getpid();
     // write into logfile the pid
+    Position obstacle_pos;
     writeLog("OBSTACLE create with pid %d ", obstacle_pid);
 
     // configure the handler for sigusr1
@@ -80,7 +46,7 @@ int main(int argc, char *argv[])
         perror("obstacle: sigaction");
         writeLog("==> ERROR ==> obstacle: sigaction %m ");
     }
-    
+
     //// -- manage pipe ----------------------------------------------------------
     // Take the fd for comunicating with master, it's position is 1,2 in argv[]
     int fd5[2];
@@ -110,7 +76,7 @@ int main(int argc, char *argv[])
 
     //// pipe for communication between obstacle -> server, are in ositions 3, 4 of argv[]
     printf("print in screen the value of argv 3 and 4: %s, %s ", argv[3], argv[4]);
-    
+
     int fdo_s[2];
     for (i = 3; i < 5; i++)
     {
@@ -125,8 +91,29 @@ int main(int argc, char *argv[])
         writeLog("==> ERROR ==> obstacle: close fdo_s[0], %m ");
     }
 
+    // initialize the time on random generator
+    srand(time(NULL));
+    double set_of_obstacle[MAX_OBST_ARR_SIZE][2];
     while (1)
     {
+        for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+        {
+            set_of_obstacle[i][0] = (double)rand() / RAND_MAX;
+            set_of_obstacle[i][1] = (double)rand() / RAND_MAX;
+        }
+        
+
+        if (write(fdo_s[1], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
+        {
+            perror("obstacle: error write fdo_s[1]");
+            writeLog("==> ERROR ==> obstacle: write fdo_s[1], %m ");
+        }
+        for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+        {
+            printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
+            fflush(stdout);
+        }
+        // generat obstacle every seconds
         sleep(1);
     }
 
@@ -135,5 +122,53 @@ int main(int argc, char *argv[])
     {
         perror("obstacle: close fdo_s[1] ");
         writeLog("==> ERROR ==> obstacle: close fdo_s[1], %m ");
+    }
+}
+
+//// --- Function section -------------------------------------------------------------
+
+/* function for write in logfile*/
+void writeLog(const char *format, ...)
+{
+
+    FILE *logfile = fopen("logfile.txt", "a");
+    if (logfile == NULL)
+    {
+        perror("server: error opening logfile");
+        exit(EXIT_FAILURE);
+    }
+    va_list args;
+    va_start(args, format);
+
+    time_t current_time;
+    time(&current_time);
+
+    fprintf(logfile, "%s => ", ctime(&current_time));
+    vfprintf(logfile, format, args);
+
+    va_end(args);
+    fflush(logfile);
+    if (fclose(logfile) == -1)
+    {
+        perror("fclose logfile");
+        writeLog("ERROR ==> server: fclose logfile");
+    }
+}
+
+// Inserire perror nella kill
+void sigusr1Handler(int signum, siginfo_t *info, void *context)
+{
+    if (signum == SIGUSR1)
+    {
+        /*send a signal SIGUSR2 to watchdog */
+        if (kill(info->si_pid, SIGUSR2) == 0)
+        {
+            writeLog("OBSTACLE: pid %d, received signal from wd pid: %d ", getpid(), info->si_pid);
+        }
+        else
+        {
+            perror("obstacle: kill SIGUSR2 ");
+            writeLog("==> ERROR ==> obstacle: kill SIGUSR2 %m ");
+        }
     }
 }

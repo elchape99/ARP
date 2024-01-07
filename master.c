@@ -65,15 +65,6 @@ int spawn(const char *program, char **arg_list)
     }
 }
 
-char* convertFdString(int fd[]){
-    char str_fd[2][20];
-    for (int i = 0; i < 2; i++)
-    {
-        sprintf(str_fd[i], "%d", fd[i]);
-    }    
-    return str_fd;
-}
-
 int main()
 {
     /* The master spawn all the process  in oreder server, input, drone, target, obstacle, with watchdog at the end
@@ -122,7 +113,7 @@ int main()
         perror("master: pipe fd1");
         writeLog("==> ERROR ==> master: build pipe fd1, %m ");
     }
-    // convert fd pipe in str    
+    // convert fd pipe in str
     char str_fd1[2][20];
     for (i = 0; i < 2; i++)
     {
@@ -192,7 +183,7 @@ int main()
     writeLog("MASTER send to target the pipe fd4 file descriptor: %d, %d ", fd4[0], fd4[1]);
     writeLog("MASTER send to obstacle the pipe fd5 file descriptor: %d, %d ", fd5[0], fd5[1]);
 
-    //// Pipe for communication between INPUT and SERVER 
+    //// Pipe for communication between INPUT and SERVER
     int fdi_s[2];
     if ((pipe(fdi_s)) < 0)
     {
@@ -248,7 +239,7 @@ int main()
         sprintf(str_fdo_s[i], "%d", fdo_s[i]);
     }
 
-    // --- SERVER process -----------------------------------------------------------------
+    // --- SERVER process ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     // Server process is execute with konsole so, the child_pid(correspond to the pid of the kosole) and the child_pid_received( correspod to the pid of process)
     char *arg_list_server[] = {"konsole", "-e", "./server", str_fd1[0], str_fd1[1], str_fdi_s[0], str_fdi_s[1], str_fdd_s[0], str_fdd_s[1], str_fdt_s[0], str_fdt_s[1], str_fdo_s[0], str_fdo_s[1], NULL};
     child_pids[0] = spawn("konsole", arg_list_server);
@@ -271,7 +262,7 @@ int main()
         writeLog("==> ERROR ==> master: close fd1[0], %m ");
     }
 
-    // --- INPUT process ------------------------------------------------------------
+    // --- INPUT process ----------------------------------------------------------------------------------------
     char *arg_list_i[] = {"konsole", "-e", "./input", str_fd2[0], str_fd2[1], str_fdi_s[0], str_fdi_s[1], NULL};
     child_pids[1] = spawn("konsole", arg_list_i);
     writeLog("MSTER spawn input with pid: %d ", child_pids[1]);
@@ -294,7 +285,7 @@ int main()
     }
     writeLog("MASTER send to input fdi_s with value: %d, %d ", fdi_s[0], fdi_s[1]);
 
-    // --- DRONE process -----------------------------------------------------------------------
+    // --- DRONE process -------------------------------------------------------------------------------------------------
     char *arg_list_drone[] = {"Konsole", "-e", "./drone", str_fd3[0], str_fd3[1], str_fdd_s[0], str_fdd_s[1], NULL};
     child_pids[2] = spawn("konsole", arg_list_drone);
     writeLog("MASTER spawn drone with pid: %d ", child_pids[2]);
@@ -316,7 +307,7 @@ int main()
         writeLog("==> ERROR ==> master: close fd3[0], %m ");
     }
 
-    //---- TARGET process -----------------------------------------------------------
+    //---- TARGET process -----------------------------------------------------------------------------------------------------
     char *arg_list_target[] = {"Konsole", "-e", "./target", str_fd4[0], str_fd4[1], str_fdt_s[0], str_fdt_s[1], NULL};
     child_pids[3] = spawn("konsole", arg_list_target);
     writeLog("MASTER spawn target with pid: %d ", child_pids[3]);
@@ -338,7 +329,7 @@ int main()
         writeLog("==> ERROR ==> master: close fd4[0], %m ");
     }
 
-    //---- OBSTACLE process ----------------------------------------------------------------
+    //---- OBSTACLE process -------------------------------------------------------------------------------------------------------
     char *arg_list_obstacle[] = {"Konsole", "-e", "./obstacle", str_fd5[0], str_fd5[1], str_fdo_s[0], str_fdo_s[1], NULL};
     child_pids[4] = spawn("konsole", arg_list_obstacle);
     writeLog("MASTER spawn obstacle with pid: %d ", child_pids[4]);
@@ -371,14 +362,15 @@ int main()
         sprintf(str_child_pids_received[i], "%d", child_pids_received[i]);
     }
     writeLog("MASTER: child_pids are: %s, %s, %s, %s, %s ", str_child_pids[0], str_child_pids[1], str_child_pids[2], str_child_pids[3], str_child_pids[4]);
-    writeLog("MASTER child_pids_received are: %s, %s, %s, %s, %s", str_child_pids_received[0], str_child_pids_received[1], str_child_pids_received[2], str_child_pids_received[3], str_child_pids_received[4]);        // ---- WATCHDOG process ---------------------------------------------------------
-        
+    writeLog("MASTER child_pids_received are: %s, %s, %s, %s, %s", str_child_pids_received[0], str_child_pids_received[1], str_child_pids_received[2], str_child_pids_received[3], str_child_pids_received[4]);
+    /*
+    //------- WATCHDOG process --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     // spawn watchdog, and pass as argument all the pids of processes
     char *arg_list_wd[] = {"Konsole", "-e", "./wd", str_child_pids[0], str_child_pids[1], str_child_pids[2], str_child_pids[3], str_child_pids[4], str_child_pids_received[0], str_child_pids_received[1], str_child_pids_received[2], str_child_pids_received[3], str_child_pids_received[4], NULL};
     child_pids[num_ps] = spawn("konsole", arg_list_wd);
     writeLog("MASTER spawn WATCHDOG with pid: %d ", child_pids[num_ps]);
     // The master will wait until all the process will terminate
-
+    */
     pid_t waitResult;
     int status;
     for (i = 0; i <= num_ps; i++)
