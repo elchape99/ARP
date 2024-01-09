@@ -15,6 +15,9 @@
 #include <ncurses.h>
 #include "arplib.h"
 
+#define WIND_NUMBER 12
+ 
+
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
 {
@@ -48,11 +51,17 @@ void writeLog(const char *format, ...)
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
 // declarations of functions used for windows
-WINDOW *create_new_window(int row, int col, int ystart, int xstart, char icon);
-void destroy_win(WINDOW *local_win);
-void print_on_button(WINDOW *pointer, char icon, int row, int col);
-void case_execution(char input_char, int PRy, int PRx, WINDOW *print_pointer, WINDOW *color_pointer, int write_fd, int read_fd);
+void open_control_window(int Srow, int Scol, WINDOW *array_pointer[], char *icon_string, int *active_power);
 
+WINDOW *create_new_window(int row, int col, int ystart, int xstart, char icon, int index, int *active_power);
+void destroy_win(WINDOW *local_win);
+
+void print_on_button(WINDOW *pointer, char icon, int row, int col, int active_power);
+void print_on_window(WINDOW *print_pointer, char input_char);
+void color_blink(WINDOW *color_pointer);
+
+void case_execution(char input_char, WINDOW *array_pointer[], char *icon_string, int *active_power);
+int *manage_input(char input_char, char *icon_string, int *active_power, double *resulting_power);
 int **generate_wind_info(int Srow, int Scol);
 
 // global variables
@@ -121,18 +130,16 @@ int main(int argc, char *argv[])
    
     ////---- Manage pipe end --------------------------------------------------------
 
-    char input_char = 'a'; // definisco la variabile di input
+    char input_char = '?'; // definisco la variabile di input
 
     // definizione delle variabili di ncurses ------
     int Srow, Scol, SrowNew, ScolNew;
-    int Wrow, Wcol, Starty, Startx;
-    int PRy, PRx;
 
     WINDOW *external_window;
     WINDOW *printing_window;
 
-    int CBstarty, CBstartx;
     WINDOW *central_butt;
+    WINDOW *quit_butt;
 
     WINDOW *up_butt;
     WINDOW *down_butt;
@@ -144,14 +151,17 @@ int main(int argc, char *argv[])
     WINDOW *down_left_butt;
     WINDOW *down_right_butt;
 
-    WINDOW *quit_butt;
 
-    char icon_string[12] = {'-', '-', 'q', 'W', 'E', 'R', 'S', 'D', 'F', 'X', 'C', 'V'};
-    int button_number[12];
-    for (i = 0; i < 12; i++){button_number[i] = 0;}
-    WINDOW *wind_pointer_array[12] = {external_window, printing_window, quit_butt, up_left_butt, up_butt, up_right_butt, left_butt, central_butt, right_butt, down_left_butt, down_butt, down_right_butt};
+    char icon_string[WIND_NUMBER] = {'-', '-', 'Q', 'W', 'E', 'R', 'S', 'D', 'F', 'X', 'C', 'V'};
 
-    int wind_info[12][4];
+    int *active_power = (int *)malloc(WIND_NUMBER * sizeof(int));
+    for (int i = 0; i < WIND_NUMBER; i++){active_power[i] = 0;}
+    active_power[2] = -1;
+    active_power[7] = -1;
+
+    double resulting_power[2] = {0.0, 0.0};
+
+    WINDOW *wind_pointer_array[WIND_NUMBER] = {external_window, printing_window, quit_butt, up_left_butt, up_butt, up_right_butt, left_butt, central_butt, right_butt, down_left_butt, down_butt, down_right_butt};
 
     // ncurses initialization row, attivo la modalità ncurses
     initscr();
@@ -164,79 +174,14 @@ int main(int argc, char *argv[])
     getmaxyx(stdscr, Srow, Scol);
     refresh();
 
-    // definizione delle finestre per i bottoni
-    // external e printing wind creation
-    Wrow = (int)(Srow * 0.9);
-    Wcol = (int)(Scol * 0.8);
-    Starty = 0;
-    Startx = (int)((Scol - Wcol) / 2);
-    external_window = create_new_window(Wrow, Wcol, Starty, Startx, '-');
-    Wrow = (int)(Srow * 0.1);
-    Starty = Srow - Wrow;
-    printing_window = create_new_window(Wrow, Wcol, Starty, Startx, '-');
-    getmaxyx(printing_window, PRy, PRx);
+    open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
 
-    // central button creation
-    Wrow = (int)(Srow * 0.1);
-    Wcol = Wrow * 2;
-    Starty = (int)((Srow - Wrow) / 2);
-    Startx = (int)((Scol - Wcol) / 2);
-    CBstarty = Starty;
-    CBstartx = Startx;
-    central_butt = create_new_window(Wrow, Wcol, Starty, Startx, 'D');
+    while((input_char = getch()) != 'q'){
 
-    // up, down, left, right button creation
-    down_butt = create_new_window(Wrow * 2, Wcol, (CBstarty + Wrow), CBstartx, 'C');
-    up_butt = create_new_window(Wrow * 2, Wcol, (CBstarty - (Wrow * 2)), CBstartx, 'E');
-    left_butt = create_new_window(Wrow, Wcol * 2, CBstarty, CBstartx - (Wcol * 2), 'S');
-    right_butt = create_new_window(Wrow, Wcol * 2, CBstarty, CBstartx + (Wcol), 'F');
+        active_power = manage_input(input_char, icon_string, active_power, resulting_power);
+        
+        case_execution(input_char, wind_pointer_array, icon_string, active_power);
 
-    // half way button creation
-    up_left_butt = create_new_window(Wrow, Wcol, (CBstarty - Wrow), (CBstartx - Wcol), 'W');
-    up_right_butt = create_new_window(Wrow, Wcol, (CBstarty - Wrow), (CBstartx + Wcol), 'R');
-    down_left_butt = create_new_window(Wrow, Wcol, (CBstarty + Wrow), (CBstartx - Wcol), 'X');
-    down_right_butt = create_new_window(Wrow, Wcol, (CBstarty + Wrow), (CBstartx + Wcol), 'V');
-
-    // do while --> prendo input in modo continuativo
-    while (input_char != 'q')
-    {
-        input_char = getch();
-        switch (input_char)
-        {
-        case 'w':
-            case_execution(input_char, PRy, PRx, printing_window, up_left_butt, fdi_s[1], fdi_s[0]);
-            break;
-        case 'e':
-            case_execution(input_char, PRy, PRx, printing_window, up_butt, fdi_s[1], fdi_s[0]);
-            break;
-        case 'r':
-            case_execution(input_char, PRy, PRx, printing_window, up_right_butt, fdi_s[1], fdi_s[0]);
-            break;
-        case 'f':
-            case_execution(input_char, PRy, PRx, printing_window, right_butt, fdi_s[1], fdi_s[0]);
-            break;
-        case 'v':
-            case_execution(input_char, PRy, PRx, printing_window, down_right_butt, fdi_s[1], fdi_s[0]);
-            break;
-        case 'c':
-            case_execution(input_char, PRy, PRx, printing_window, down_butt, fdi_s[1], fdi_s[0]);
-            break;
-        case 'x':
-            case_execution(input_char, PRy, PRx, printing_window, down_left_butt, fdi_s[1], fdi_s[0]);
-            break;
-        case 's':
-            case_execution(input_char, PRy, PRx, printing_window, left_butt, fdi_s[1], fdi_s[0]);
-            break;
-        case 'd':
-            case_execution(input_char, PRy, PRx, printing_window, central_butt, fdi_s[1], fdi_s[0]);
-            break;
-        case 'q':
-            case_execution(input_char, PRy, PRx, printing_window, central_butt, fdi_s[1], fdi_s[0]);
-            break;
-        default:
-            case_execution('A', PRy, PRx, printing_window, central_butt, fdi_s[1], fdi_s[0]);
-            break;
-        }
         getmaxyx(stdscr, SrowNew, ScolNew);
         if (SrowNew != Srow || ScolNew != Scol){
             Scol = ScolNew;
@@ -244,57 +189,17 @@ int main(int argc, char *argv[])
 
             clear();
 
-            destroy_win(external_window);
-            destroy_win(printing_window);
-
-            destroy_win(central_butt);
-
-            destroy_win(down_butt);
-            destroy_win(up_butt);
-            destroy_win(left_butt);
-            destroy_win(right_butt);
-
-            destroy_win(down_left_butt);
-            destroy_win(down_right_butt);
-            destroy_win(up_left_butt);
-            destroy_win(up_right_butt);
+            for(int i = 0; i < WIND_NUMBER; i++){
+                destroy_win(wind_pointer_array[i]);
+            }
 
             refresh();
 
-            // definizione delle finestre per i bottoni
-            // external e printing wind creation
-            Wrow = (int)(Srow * 0.9);
-            Wcol = (int)(Scol * 0.8);
-            Starty = 0;
-            Startx = (int)((Scol - Wcol) / 2);
-            external_window = create_new_window(Wrow, Wcol, Starty, Startx, '-');
-            Wrow = (int)(Srow * 0.1);
-            Starty = Srow - Wrow;
-            printing_window = create_new_window(Wrow, Wcol, Starty, Startx, '-');
-            getmaxyx(printing_window, PRy, PRx);
-
-            // central button creation
-            Wrow = (int)(Srow * 0.1);
-            Wcol = Wrow * 2;
-            Starty = (int)((Srow - Wrow) / 2);
-            Startx = (int)((Scol - Wcol) / 2);
-            CBstarty = Starty;
-            CBstartx = Startx;
-            central_butt = create_new_window(Wrow, Wcol, Starty, Startx, 'D');
-
-            // up, down, left, right button creation
-            down_butt = create_new_window(Wrow * 2, Wcol, (CBstarty + Wrow), CBstartx, 'C');
-            up_butt = create_new_window(Wrow * 2, Wcol, (CBstarty - (Wrow * 2)), CBstartx, 'E');
-            left_butt = create_new_window(Wrow, Wcol * 2, CBstarty, CBstartx - (Wcol * 2), 'S');
-            right_butt = create_new_window(Wrow, Wcol * 2, CBstarty, CBstartx + (Wcol), 'F');
-
-            // half way button creation
-            up_left_butt = create_new_window(Wrow, Wcol, (CBstarty - Wrow), (CBstartx - Wcol), 'W');
-            up_right_butt = create_new_window(Wrow, Wcol, (CBstarty - Wrow), (CBstartx + Wcol), 'R');
-            down_left_butt = create_new_window(Wrow, Wcol, (CBstarty + Wrow), (CBstartx - Wcol), 'X');
-            down_right_butt = create_new_window(Wrow, Wcol, (CBstarty + Wrow), (CBstartx + Wcol), 'V');
+            open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
         }
     }
+    // free memory
+    free(active_power);
 
     // termination row
     endwin();
@@ -324,14 +229,14 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context)
     }
 }
 
-WINDOW *create_new_window(int row, int col, int ystart, int xstart, char icon)
+WINDOW *create_new_window(int row, int col, int ystart, int xstart, char icon, int index, int *active_power)
 {
     WINDOW *local_window = newwin(row, col, ystart, xstart);
     box(local_window, 0, 0);
 
-    if (icon != '-')
+    if (icon != '-' && index >= 2)
     {
-        print_on_button(local_window, icon, row, col);
+        print_on_button(local_window, icon, row, col, active_power[index]);
     }
 
     wrefresh(local_window);
@@ -356,6 +261,18 @@ int **generate_wind_info(int Srow, int Scol){
         wind_info[i] = (int *)malloc(4 * sizeof(int));
     }
 
+    // central button -> definisco le altre dimensioni su questa -----
+    wind_info[7][0] = (int)(Srow * 0.1);
+    wind_info[7][1] = wind_info[7][0] * 2;
+    wind_info[7][2] = ((int)((Srow - wind_info[7][0]) / 2));
+    wind_info[7][3] = ((int)((Scol - wind_info[7][1]) / 2));
+    // ---------------------------------------------------------------
+    int square_row = wind_info[7][0];
+    int square_col = wind_info[7][1];
+
+    int center_y = wind_info[7][2];
+    int center_x = wind_info[7][3];
+
     // external window
     wind_info[0][0] = (int)(Srow * 0.9);
     wind_info[0][1] = (int)(Scol * 0.8);
@@ -369,73 +286,170 @@ int **generate_wind_info(int Srow, int Scol){
     wind_info[1][3] = (int)((Scol - wind_info[1][1]) / 2);
 
     // quit button
-    wind_info[2][0] = (int)(Srow * 0.1);
-    wind_info[2][1] = (int)(Scol * 0.1);
-    wind_info[2][2] = 0
-    wind_info[2][3] = (int)((Scol - wind_info[2][1];) / 2);
+    wind_info[2][0] = square_row;
+    wind_info[2][1] = square_col * 2;
+    wind_info[2][2] = 1;
+    wind_info[2][3] = (int)((Scol - wind_info[2][1]) / 2);
    
-    // up left button
+    // up left button 
+    wind_info[3][0] = square_row; 
+    wind_info[3][1] = square_col;
+    wind_info[3][2] = (center_y)-(square_row);
+    wind_info[3][3] = (center_x)-(square_col);
 
-    // up button
+    // up button --> bottone su lungo
+    wind_info[4][0] = square_row * 2;
+    wind_info[4][1] = square_col;
+    wind_info[4][2] = center_y-(square_row * 2);
+    wind_info[4][3] = center_x;
 
     // up right button
+    wind_info[5][0] = square_row; 
+    wind_info[5][1] = square_col;
+    wind_info[5][2] = center_y - square_row;
+    wind_info[5][3] = center_x + square_col;
 
-    // left button
+    // left button --> bottone sinistra lungo
+    wind_info[6][0] = square_row;
+    wind_info[6][1] = square_col * 2;
+    wind_info[6][2] = center_y;
+    wind_info[6][3] = (center_x)-(square_col * 2);
 
-    // central button
-
-    // right button 
+    // right button --> bottone destra lungo
+    wind_info[8][0] = square_row;
+    wind_info[8][1] = square_col * 2;
+    wind_info[8][2] = center_y;
+    wind_info[8][3] = center_x + square_col;
 
     // down left button
+    wind_info[9][0] = square_row; 
+    wind_info[9][1] = square_col;
+    wind_info[9][2] = center_y + square_row;
+    wind_info[9][3] = center_x - square_col;
 
-    // down button
+    // down button --> bottone giu lungo
+    wind_info[10][0] = square_row * 2;
+    wind_info[10][1] = square_col;
+    wind_info[10][2] = center_y + square_row;
+    wind_info[10][3] = center_x;
+
 
     // down right button
-
-
+    wind_info[11][0] = square_row; 
+    wind_info[11][1] = square_col;
+    wind_info[11][2] = center_y + square_row;
+    wind_info[11][3] = center_x + square_col;
 
     return wind_info;
 }
 
-void case_execution(char input_char, int PRy, int PRx, WINDOW *print_pointer, WINDOW *color_pointer, int write_fd, int read_fd)
-{
-    // pipe section
-    // write on pipe
-    int controllo;
-    close(read_fd);
-    if ((controllo = write(write_fd, &input_char, 1)) < 0)
-    {
-        perror("errore write");
+void open_control_window(int Srow, int Scol, WINDOW *array_pointer[], char *icon_string, int *active_power){
+    int **local_array;
+    local_array = generate_wind_info(Srow, Scol);
+
+    for(int i = 0; i < WIND_NUMBER; i++){
+        array_pointer[i] = create_new_window(local_array[i][0], local_array[i][1], local_array[i][2], local_array[i][3], icon_string[i], i, active_power);
     }
-    //
+
+    free(local_array);
+}
+
+void case_execution(char input_char, WINDOW *array_pointer[], char *icon_string, int *active_power)
+{
+    int pointer_index = 0;
+    int BTy, BTx;
+
+    for(int i = 2; i < WIND_NUMBER; i++){
+        if(toupper(input_char) == icon_string[i]){
+            pointer_index = i;
+        }
+    }
+
+    if(pointer_index > 2 && pointer_index < WIND_NUMBER){
+        if(pointer_index == 7){
+            for(int i = 3; i < WIND_NUMBER; i++){
+                getmaxyx(array_pointer[i], BTy, BTx);
+                print_on_button(array_pointer[i], icon_string[i], BTy, BTx, active_power[i]);
+            }
+
+        }else{
+            getmaxyx(array_pointer[pointer_index], BTy, BTx);
+            print_on_button(array_pointer[pointer_index], icon_string[pointer_index], BTy, BTx, active_power[pointer_index]);
+
+            print_on_window(array_pointer[1], input_char);
+
+            if(pointer_index >= 2){
+            color_blink(array_pointer[pointer_index]);
+            }
+        }
+    }
+}
+
+int *manage_input(char input_char, char *icon_string, int *active_power, double *resulting_power){
+    int pointer_index = 0;
+    for(int i = 3; i < WIND_NUMBER; i++){
+        if(toupper(input_char) == icon_string[i]){
+            pointer_index = i;
+        }
+    }
+
+    if(pointer_index > 2 && pointer_index < WIND_NUMBER){
+        if(pointer_index == 7){
+            for (int i = 0; i < WIND_NUMBER; i++){active_power[i] = 0;}
+            active_power[2] = -1;
+            active_power[7] = -1;
+
+            resulting_power[0] = active_power[4] - active_power[10] + active_power[3] / 2.0 + active_power[5] / 2.0 - active_power[9] / 2.0 - active_power[11] / 2.0;
+            resulting_power[1] = active_power[8] - active_power[6] + active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 - active_power[11] / 2.0;
+        }else{
+            active_power[pointer_index] += 1;
+
+            resulting_power[0] = active_power[4] - active_power[10] + active_power[3] / 2.0 + active_power[5] / 2.0 - active_power[9] / 2.0 - active_power[11] / 2.0;
+            resulting_power[1] = active_power[8] - active_power[6] + active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 - active_power[11] / 2.0;
+        }
+    }
+
+    return active_power;
+}
+
+void print_on_button(WINDOW *pointer, char icon, int row, int col, int active_power)
+{
+    if(active_power == -1){
+        char string[50];
+        sprintf(string, "%c", icon);
+        mvwaddstr(pointer, (row / 2), ((col - strlen(string)) / 2), string);
+        wrefresh(pointer);
+    }else{
+        char string[50];
+        sprintf(string, "%c - %d", icon, active_power);
+        mvwaddstr(pointer, (row / 2), ((col - strlen(string)) / 2), string);
+        wrefresh(pointer);
+    }
+}
+
+void print_on_window(WINDOW *print_pointer, char input_char){
+    int PRy, PRx;
+    getmaxyx(print_pointer, PRy, PRx);
+
     char string[30] = "hai premuto il tasto: ";
     strncat(string, &input_char, 1);
     mvwaddstr(print_pointer, PRy / 2, ((PRx - strlen(string)) / 2), string);
     // wprintw(print_pointer, "valore controllo: %d", controllo);
     wrefresh(print_pointer);
 
-    if (has_colors() == FALSE)
-    {
-        mvwprintw(print_pointer, PRy / 2, ((PRx - strlen("terminale non supporta colore")) / 2), "terminale non supporta colore");
-    }
-    else
-    {
-        start_color();
-        init_pair(2, COLOR_RED, COLOR_BLUE);
-        init_pair(1, COLOR_WHITE, COLOR_BLACK);
-
-        wbkgd(color_pointer, COLOR_PAIR(2));
-        wrefresh(color_pointer);
-        napms(50);
-        // Return to the default color
-        wbkgd(color_pointer, COLOR_PAIR(1));
-        wrefresh(color_pointer);
-    }
 }
 
-void print_on_button(WINDOW *pointer, char icon, int row, int col)
-{
-    char string[50];
-    sprintf(string, "%c", icon);
-    mvwaddstr(pointer, (row / 2), ((col - strlen(string)) / 2), string);
+void color_blink(WINDOW *color_pointer){
+
+    start_color();
+    init_pair(2, COLOR_RED, COLOR_BLUE);
+    init_pair(1, COLOR_WHITE, COLOR_BLACK);
+
+    wbkgd(color_pointer, COLOR_PAIR(2));
+    wrefresh(color_pointer);
+    napms(50);
+    // Return to the default color
+    wbkgd(color_pointer, COLOR_PAIR(1));
+    wrefresh(color_pointer);
+
 }
