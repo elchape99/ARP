@@ -132,6 +132,10 @@ int main(int argc, char *argv[])
 
     char input_char = '?'; // definisco la variabile di input
 
+    char start_char = '?';
+    char resisize_request[] = "please resize the window";
+    char rule_line[100];
+
     // definizione delle variabili di ncurses ------
     int Srow, Scol, SrowNew, ScolNew;
 
@@ -163,6 +167,12 @@ int main(int argc, char *argv[])
 
     WINDOW *wind_pointer_array[WIND_NUMBER] = {external_window, printing_window, quit_butt, up_left_butt, up_butt, up_right_butt, left_butt, central_butt, right_butt, down_left_butt, down_butt, down_right_butt};
 
+    FILE *rules_text = fopen("rule.txt", "r");
+    if(rules_text == NULL){
+        printf("null file pointer\n");
+        fflush(stdout);
+    }
+
     // ncurses initialization row, attivo la modalità ncurses
     initscr();
     cbreak();
@@ -174,11 +184,49 @@ int main(int argc, char *argv[])
     getmaxyx(stdscr, Srow, Scol);
     refresh();
 
+    // print rules
+    while (Srow < 21 || Scol < 78)
+    {
+        mvaddstr((Srow / 2), ((Scol - strlen(resisize_request)) / 2), resisize_request);
+        refresh();
+
+        getmaxyx(stdscr, Srow, Scol);
+    }
+    
+    int indx = 0;
+    int indx_offset = (Srow - 21)/2; // da modificare se cambia il rule.txt
+    while((fgets(rule_line, sizeof(rule_line), rules_text)) != NULL)
+    {
+        mvprintw(indx+indx_offset, (Scol - strlen(rule_line))/2, "%s", rule_line);
+        indx++;
+    }
+
+    refresh();
+    fclose(rules_text);
+
+    while((start_char = getch()) != ' ')
+    {
+        usleep(100);
+    }
+    
+    clear();
+    refresh();
+    //inizio del gioco
+
     open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
 
     while((input_char = getch()) != 'q'){
 
         active_power = manage_input(input_char, icon_string, active_power, resulting_power);
+
+        // sending force data to the server process, trogh the pipe fdi_s[1]
+        if (write(fdi_s[1], &resulting_power, sizeof(resulting_power)) < 0){
+
+            perror("input: write fdi_s[1] ");
+            writeLog("==> ERROR ==> input: write fdi_s[1] %m ");
+
+        }
+        //
         
         case_execution(input_char, wind_pointer_array, icon_string, active_power);
 
