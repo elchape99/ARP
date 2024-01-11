@@ -70,33 +70,54 @@ int main(int argc, char *argv[])
     {
         fd3[i - 1] = atoi(argv[i]);
     }
-    writeLog("DRONE riceived fd1: %d, %d", fd3[0], fd3[1]);
+    writeLog("DRONE riceived fd3: %d, %d", fd3[0], fd3[1]);
     // close the read file descriptor fd2[0]
     if (close(fd3[0]) < 0)
     {
-        perror("close fd3[0] drone");
-        writeLog("ERROR ==> close fd3[0] drone %m ");
+        perror("drone: close fd3[0]");
+        writeLog("ERROR ==>d rone: close fd3[0] %m ");
     }
     // write the pid inside the pipe
     if (write(fd3[1], &drone_pid, sizeof(drone_pid)) < 0)
     {
-        perror("write fd3[1] drone");
-        writeLog("ERROR ==> write fd3[1] drone %m ");
+        perror("drone: write fd3[1] ");
+        writeLog("ERROR ==> drone: write fd3[1] %m ");
     }
     // close the write file descriptor fd2[1]
     if (close(fd3[1]) < 0)
     {
-        perror("close fd3[1] drone");
-        writeLog("ERROR ==> close fd3[1] drone %m ");
+        perror("drone: close fd3[1] drone");
+        writeLog("ERROR ==> drone:  close fd3[1] drone %m ");
     }
-    //// pipe for comunication between drone <-> server, are in position 3, 4
+    //// pipe for comunication between drone -> server, are in position 3, 4
     int fdd_s[2];
     // file descritor are in position 3 and 4 of argv[]
     for (i = 3; i < 5; i++)
     {
         fdd_s[i - 3] = atoi(argv[i]);
     }
+    // close the read file descriptor fdd_s[0]
+    if (close(fdd_s[0]) < 0)
+    {
+        perror("drone: close fdd_s[0] ");
+        writeLog("ERROR ==> drone: close fd[1] %m ");
+    }
     writeLog("SERVER value of fdd_s are: %d %d ", fdd_s[0], fdd_s[1]);
+
+    //// pipe for comunication between server -> drone, are in position 5, 6
+    int fds_d[2];
+    for (i = 5; i < 7; i++)
+    {
+        fds_d[i - 5] = atoi(argv[i]);
+    }
+    // close the write file descriptor fds_d[1]
+    if (close(fds_d[1]) < 0)
+    {
+        perror("drone: close fds_d[1]");
+        writeLog("ERROR ==> drone close fds_d[1] %m ");
+    }
+    writeLog("SERVER value of fds_d are: %d %d ", fds_d[0], fds_d[1]);
+
 
     // inizializzazione delle variabili per la dinamica --------------------------------------------------------------
     double *input_vect = malloc(sizeof(double) * INP_NUM); // riservo la memoria per il vettore di input
@@ -124,6 +145,9 @@ int main(int argc, char *argv[])
   
 
     // ciclo infinito per ricever input dal server
+
+    // DRONE RICEVE FORZA DALLA PIPE fds_d
+    // DRONE MANDA POSIZIONE DALLA PIPE fdd_s
     while (1)
     {        
         // ridefinisco ad ogni ciclo --> azione select retVal_sel == 0

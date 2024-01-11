@@ -16,8 +16,9 @@
 #include "arplib.h"
 
 #define DRONE_ICON 'X'
-MAX_OBST_ARR_SIZE = 10;
-MAX_TARG_ARR_SIZE = 10;
+#define MAX_OBST_ARR_SIZE 10
+#define MAX_TARG_ARR_SIZE 10
+#define k 0.2
 
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
@@ -170,59 +171,73 @@ int main(int argc, char *argv[])
         perror("server: close fdo_s[1]");
         writeLog("ERROR ==> server: close fdo_s[1], %m ");
     }
-    /*
-        // parte legata ad ncurses per il server
-        Position drone_pose;
-        Position drone_pose_old;
-        drone_pose_old.Ypos = 0.0;
-        drone_pose_old.Xpos = 0.0;
-    */
-    /*
-        WINDOW *map_window; // definizione puntatore alla mappa
-        int Srow, Scol;     // righe e colonne massime dello schermo
-        int rowSH, colSH;
-        // initialization row
-        initscr();
-        raw();
-        cbreak();
-        noecho();
-        keypad(stdscr, TRUE);
 
-        getmaxyx(stdscr, Srow, Scol);
-        rowSH = Srow / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
-        colSH = Scol / 2;
+    // parte legata ad ncurses per il server
+    Position drone_pose;
+    Position drone_pose_old;
+    drone_pose_old.Ypos = 0.0;
+    drone_pose_old.Xpos = 0.0;
 
-        // creo la finestra della mappa
-        // map_window = create_new_window(Srow, Scol, 0, 0);
-        // move_drone_icon(rowSH - (int)pose->Ypos, colSH + (int)pos->Xpos, map_window);
-        raw();
-        cbreak();
-        noecho();
-        keypad(stdscr, TRUE);
+    WINDOW *map_window; // definizione puntatore alla mappa
+    int Srow, Scol;     // righe e colonne massime dello schermo
+    int rowSH, colSH;
+    // initialization row
+    initscr();
+    raw();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
 
-        getmaxyx(stdscr, Srow, Scol);
-        rowSH = Srow / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
-        colSH = Scol / 2;
-        */
+    getmaxyx(stdscr, Srow, Scol);
+    rowSH = Srow / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
+    colSH = Scol / 2;
+
+    // creo la finestra della mappa
+    // map_window = create_new_window(Srow, Scol, 0, 0);
+    // move_drone_icon(rowSH - (int)pose->Ypos, colSH + (int)pos->Xpos, map_window);
+    raw();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+
+    getmaxyx(stdscr, Srow, Scol);
+    rowSH = Srow / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
+    colSH = Scol / 2;
+
+    // varaibles for dynamics and forces
     double obj_pos[2];
     double set_of_obstacle[MAX_OBST_ARR_SIZE][2];
     double set_of_target[MAX_TARG_ARR_SIZE][2];
-    // read the set of obstacle comesfrom obstacle process  
-    if (read(fdt_s[0], set_of_target, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
+    double inputForce[2];
+    double dronePosition[2];
+    double obstForce [2] = {0};
+    double targetForce [2] = {0};
+    double totalForce [2] = {0};
+
+    // read the set of obstacle comesfrom obstacle process
+    if (read(fdt_s[0], set_of_target, sizeof(double) * MAX_TARG_ARR_SIZE * 2) == -1)
     {
         perror("server: read fdt_s[0]");
         writeLog("==> ERROR ==> server:read fdt_s[0], %m ");
     }
+    // moltiply the target for the windows size
+    for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
+    {
+        set_of_target[i][0] = set_of_target[i][0] * colSH;
+        set_of_target[i][1] = set_of_target[i][0] * rowSH;
+    }
 
     while (1)
-    {    
+    {
 
-        // fare select 
+        // ---------------fare select --------------------------------------------------------------
 
-
-        // pipe with the input force 
-
-
+        // read the position from the drone
+        if (read(fdd_s[0], dronePosition, sizeof(double) * 2) == -1)
+        {
+            perror("server: read fdd_s[0]");
+            writeLog("==> ERROR ==> server:read fdd_s[0], %m ");
+        }
 
         // read the set of obstacle
         if (read(fdo_s[0], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
@@ -230,9 +245,72 @@ int main(int argc, char *argv[])
             perror("server: read fdo_s[0]");
             writeLog("==> ERROR ==> server:read fdo_s[0], %m ");
         }
-        // trovare le forze dei vari ostacoli 
 
-        // trovare forze target 
+        // pipe with the input force
+        if (read(fdi_s[1], inputForce, sizeof(double) * 2) == -1)
+        {
+            perror("server: read fdi_s[0]");
+            writeLog("==> ERROR ==> server:read fdi_s[0], %m ");
+        }
+
+        //------------------ furoi dalla select -----------------------------------
+
+        // normalization obstacle position
+        for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+        {
+            set_of_obstacle[i][0] = set_of_obstacle[i][0] * colSH;
+            set_of_obstacle[i][1] = set_of_obstacle[i][0] * rowSH;
+        }
+
+        // Copute the obstacleForce
+        for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+        {
+            // computate the xForce
+            obstForce[0] =  obstForce[0] + ((k * inputForce[0]) / ((set_of_obstacle[i][0] - dronePosition[0]) ^ 2))            
+            // computate the yForce
+            obstForce[1] =  obstForce[1] + ((k * inputForce[1]) / ((set_of_obstacle[i][1] - dronePosition[1]) ^ 2))            
+        }
+
+        // compute the targetForce
+        for (i = 0; i < (sizeof(set_of_target) / sizeof(set_of_target[0])); i++)
+        {
+            // computate the xForce
+            trgetForce[0] =  targetForce[0] + ((k * inputForce[0]) / ((set_of_target[i][0] - dronePosition[0]) ^ 2))            
+            // computate the yForce
+            targetForce[1] =  obstForce[1] + ((k * inputForce[1]) / ((set_of_target[i][1] - dronePosition[1]) ^ 2))            
+        }
+
+        // Compute total Force x: 
+        totalForce[0] = inputForce[0] - obstForce[0] + targetForce[0];
+        // Compute total force y:
+        totalForce[1] = inputForce[1] - obstForce[1] + targetForce[1];
+
+        //// CREARE PIPE NEL MASTER FDS_d///////////////////////// 
+        if(write(fds_d[1], totalForce, sizeof(double) * 2) == -1){
+            perror("server: erite fds_d[1]");
+            writeLog("==> ERROR ==> server: write fds_d[1], %m ");
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -240,14 +318,15 @@ int main(int argc, char *argv[])
 
         for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
         {
+            printf("set of target");
             printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
             fflush(stdout);
-        } 
+        }
         for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
         {
             printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
             fflush(stdout);
-        } 
+        }
         /*
         if ((int)drone_pose.Ypos == (int)drone_pose_old.Ypos && (int)drone_pose.Xpos == (int)drone_pose_old.Xpos)
         {

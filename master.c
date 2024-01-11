@@ -210,6 +210,19 @@ int main()
     {
         sprintf(str_fdd_s[i], "%d", fdd_s[i]);
     }
+    //// Pipe for communication between SERVER and DRONE
+    int fds_d[2];
+    if ((pipe(fds_d)) < 0)
+    {
+        perror("master: pipe fds_d ");
+        writeLog("==> ERROR ==> master: fds_d, %m ");
+    }
+    // Convert fd in sting
+    char str_fds_d[2][20];
+    for (i = 0; i < 2; i++)
+    {
+        sprintf(str_fds_d[i], "%d", fds_d[i]);
+    }
 
     //// Pipe for communication between TARGET and SERVER
     int fdt_s[2];
@@ -241,7 +254,7 @@ int main()
 
     // --- SERVER process ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     // Server process is execute with konsole so, the child_pid(correspond to the pid of the kosole) and the child_pid_received( correspod to the pid of process)
-    char *arg_list_server[] = {"konsole", "-e", "./server", str_fd1[0], str_fd1[1], str_fdi_s[0], str_fdi_s[1], str_fdd_s[0], str_fdd_s[1], str_fdt_s[0], str_fdt_s[1], str_fdo_s[0], str_fdo_s[1], NULL};
+    char *arg_list_server[] = {"konsole", "-e", "./server", str_fd1[0], str_fd1[1], str_fdi_s[0], str_fdi_s[1], str_fdd_s[0], str_fdd_s[1], str_fdt_s[0], str_fdt_s[1], str_fdo_s[0], str_fdo_s[1], str_fds_d[0], str_fds_d[1], NULL};
     child_pids[0] = spawn("konsole", arg_list_server);
     writeLog("MASTER spawn server with pid: %d ", child_pids[0]);
     // close the write file descriptor
@@ -286,7 +299,7 @@ int main()
     writeLog("MASTER send to input fdi_s with value: %d, %d ", fdi_s[0], fdi_s[1]);
 
     // --- DRONE process -------------------------------------------------------------------------------------------------
-    char *arg_list_drone[] = {"Konsole", "-e", "./drone", str_fd3[0], str_fd3[1], str_fdd_s[0], str_fdd_s[1], NULL};
+    char *arg_list_drone[] = {"Konsole", "-e", "./drone", str_fd3[0], str_fd3[1], str_fdd_s[0], str_fdd_s[1], str_fds_d[0], str_fds_d[1], NULL};
     child_pids[2] = spawn("konsole", arg_list_drone);
     writeLog("MASTER spawn drone with pid: %d ", child_pids[2]);
     // close the write file descriptor

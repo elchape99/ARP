@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
     }
     
 
-    if (write(fdo_s[1], set_of_target, sizeof(double) * MAX_TARG_ARR_SIZE * 2) == -1)
+    if (write(fdt_s[1], set_of_target, sizeof(double) * MAX_TARG_ARR_SIZE * 2) == -1)
     {
         perror("obstacle: error write fdo_s[1]");
         writeLog("==> ERROR ==> obstacle: write fdo_s[1], %m ");
