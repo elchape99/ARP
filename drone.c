@@ -15,7 +15,6 @@
 #include <sys/shm.h>
 #include "arplib.h"
 
-
 #define INP_NUM 8
 
 /////--- Functions heder --------------------------------------------------------------------------------------
@@ -41,7 +40,7 @@ typedef struct
 {
     double xPos;
     double yPos;
-}DronePos;
+} DronePos;
 
 int main(int argc, char *argv[])
 {
@@ -118,7 +117,6 @@ int main(int argc, char *argv[])
     }
     writeLog("SERVER value of fds_d are: %d %d ", fds_d[0], fds_d[1]);
 
-
     // inizializzazione delle variabili per la dinamica --------------------------------------------------------------
     double *input_vect = malloc(sizeof(double) * INP_NUM); // riservo la memoria per il vettore di input
     for (int i = 0; i < INP_NUM; i++)
@@ -135,32 +133,30 @@ int main(int argc, char *argv[])
     double *Xvel_p = &Xvel, *Xpos_p = &Xpos, *Yvel_p = &Yvel, *Ypos_p = &Ypos;
 
     int retVal_read;
-    char ch;
+    double total_force[2] = {0.0};
+    double drone_position[2] = {0.0};
 
     // definizione variabili per la select
     int retVal_sel;
     fd_set read_fd;
     struct timeval time_sel;
 
-  
-
     // ciclo infinito per ricever input dal server
 
-    // DRONE RICEVE FORZA DALLA PIPE fds_d
     // DRONE MANDA POSIZIONE DALLA PIPE fdd_s
     while (1)
-    {        
+    {
         // ridefinisco ad ogni ciclo --> azione select retVal_sel == 0
         FD_ZERO(&read_fd);
-        FD_SET(fdd_s[0], &read_fd); // definisco il set dei fd da controllare
+        FD_SET(fds_d[0], &read_fd); // definisco il set dei fd da controllare
 
         time_sel.tv_sec = 0; // timeout settatto a 0.5 secondi
         time_sel.tv_usec = 30000;
 
-        if ((retVal_sel = select(fdd_s[0] + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
+        if ((retVal_sel = select(fds_d[0] + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
         {
             perror("drone: error select: "); // controllo errori
-
+            writeLog("ERROR ==> drone: select fds_d[0] %m ");
         }
         else if (retVal_sel == 0)
         {
@@ -169,27 +165,21 @@ int main(int argc, char *argv[])
         }
         else
         { // nuovi dati disponibili
-            if ((retVal_read = read(fdd_s[0], &ch, 1)) < 0)
+            if ((retVal_read = read(fds_d[0], total_force, sizef(double) * 2)) < 0)
             {
                 perror("errore read"); // controllo errore read
+                writeLog("ERROR ==> drone: read fds_d[0] %m ");
             }
             else
             {
-                printf("controllo lettura: %d, ( %c )\n", retVal_read, ch); // controllo valori letti
+                printf("controllo lettura: %d, ( %f, %f )\n", retVal_read, total_force[0], total_force[1]); // controllo valori letti
                 fflush(stdout);
             }
-            input_vect = generate_input_vect(&input_vect, ch); // gli passo il valore di input ricevuto e scrivo nel vettore
-            for (int i = 0; i < 8; i++)
-            {
-                printf("%.2f ", input_vect[i]);
-            }
-            printf("\n");
-            fflush(stdout);
         }
 
         // genero valori di forza sui due assi
-        XForce_p = generate_x_force(input_vect, XForce_p);
-        YForce_p = generate_y_force(input_vect, YForce_p);
+        XForce_p = total_force[0];
+        YForce_p = total_force[1];
 
         // genera velocità
         Xvel_p = velocity(*XForce_p, *Xvel_p, Xvel_p);
@@ -201,30 +191,31 @@ int main(int argc, char *argv[])
         Xpos_p = position(*Xvel_p, *Xpos_p, Xpos_p);
         Ypos_p = position(*Yvel_p, *Ypos_p, Ypos_p);
 
-        // pritn positions of terminal
-        // printf("forVal(x,y):%.2f, %.2f---velVal(x,y):%.2f, %.2f---posVal(x,y):%.2f, %.2f\n", *XForce_p, *YForce_p, *Xvel_p, *Yvel_p, *Xpos_p, *Ypos_p);
-        // fflush(stdout);
-        /* sed the position at server*/
-       
+        drone_position[0] = Xpos;
+        drone_position[1] = Ypos;
+
+        if (write(fdd_s[1], drone_position, sizeof(double) * 2))
+        {
+            perror("drone: write"); // controllo errore read
+            writeLog("==> ERROR ==> drone: write fdd_s[1] %m ");
+        }
+   
     }
 
     // close the read file descriptor for fdd_s
     if (close(fdd_s[0]) == -1)
     {
         perror("drone: close fdd_s[0]");
-        writeLog("==> ERROR ==> drone: clse fdd_S[0] %m ");
+        writeLog("==> ERROR ==> drone: clse fdd_s[0] %m ");
     }
     // close the write file descriptor fd2[1]
-    if (close(fdd_s[1]) == -1)
+    if (close(fds_d[1]) == -1)
     {
-        perror("drone: close fds_s[1]");
-        writeLog("==> ERROR ==> drone: close fdd_S[1] %m ");
+        perror("drone: close fds_d[1]");
+        writeLog("==> ERROR ==> drone: close fds_d[1] %m ");
     }
     return 0;
 }
-
-
-
 
 ////--- Function section --------------------------------------------------------------
 
@@ -254,7 +245,6 @@ void writeLog(const char *format, ...)
         writeLog("ERROR ==> server: fclose logfile");
     }
 }
-
 
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
 {

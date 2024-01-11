@@ -192,6 +192,9 @@ int main(int argc, char *argv[])
 
         getmaxyx(stdscr, Srow, Scol);
     }
+
+    clear();
+    refresh();
     
     int indx = 0;
     int indx_offset = (Srow - 21)/2; // da modificare se cambia il rule.txt
@@ -213,21 +216,28 @@ int main(int argc, char *argv[])
     refresh();
     //inizio del gioco
 
-    open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
+    //open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
 
     while((input_char = getch()) != 'q'){
 
         active_power = manage_input(input_char, icon_string, active_power, resulting_power);
 
         // sending force data to the server process, trogh the pipe fdi_s[1]
-        if (write(fdi_s[1], &resulting_power, sizeof(resulting_power)) < 0){
+        if (write(fdi_s[1], resulting_power, sizeof(double)*2) < 0){
 
             perror("input: write fdi_s[1] ");
             writeLog("==> ERROR ==> input: write fdi_s[1] %m ");
 
         }
+
+        printf("%f, %f\n", resulting_power[0], resulting_power[1]);
+        fflush(stdout);
+        writeLog("input: %f, %f", resulting_power[0], resulting_power[1]);
+
+
+
         //
-        
+        /*
         case_execution(input_char, wind_pointer_array, icon_string, active_power);
 
         getmaxyx(stdscr, SrowNew, ScolNew);
@@ -245,6 +255,7 @@ int main(int argc, char *argv[])
 
             open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
         }
+        */
     }
     // free memory
     free(active_power);
@@ -447,13 +458,13 @@ int *manage_input(char input_char, char *icon_string, int *active_power, double 
             active_power[2] = -1;
             active_power[7] = -1;
 
-            resulting_power[0] = active_power[4] - active_power[10] + active_power[3] / 2.0 + active_power[5] / 2.0 - active_power[9] / 2.0 - active_power[11] / 2.0;
-            resulting_power[1] = active_power[8] - active_power[6] + active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 - active_power[11] / 2.0;
+            resulting_power[1] = active_power[4] - active_power[10] + active_power[3] / 2.0 + active_power[5] / 2.0 - active_power[9] / 2.0 - active_power[11] / 2.0;
+            resulting_power[0] = active_power[8] - active_power[6] + active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 - active_power[11] / 2.0;
         }else{
             active_power[pointer_index] += 1;
 
-            resulting_power[0] = active_power[4] - active_power[10] + active_power[3] / 2.0 + active_power[5] / 2.0 - active_power[9] / 2.0 - active_power[11] / 2.0;
-            resulting_power[1] = active_power[8] - active_power[6] + active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 - active_power[11] / 2.0;
+            resulting_power[1] = active_power[4] - active_power[10] + active_power[3] / 2.0 + active_power[5] / 2.0 - active_power[9] / 2.0 - active_power[11] / 2.0;
+            resulting_power[0] = active_power[8] - active_power[6] + active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 - active_power[11] / 2.0;
         }
     }
 
