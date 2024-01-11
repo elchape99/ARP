@@ -225,7 +225,11 @@ int main(int argc, char *argv[])
     {
 
         active_power = manage_input(input_char, icon_string, active_power, resulting_power);
-        if (resulting_power[0] != resulting_power_old[0] || resulting_power[1] != resulting_power_old[1])
+        if (resulting_power[0] == resulting_power_old[0] && resulting_power[1] == resulting_power_old[1])
+        {
+            printf("no print \n");
+        }
+        else
         {
             // sending force data to the server process, trogh the pipe fdi_s[1]
             if (write(fdi_s[1], resulting_power, sizeof(double) * 2) < 0)
@@ -241,7 +245,6 @@ int main(int argc, char *argv[])
             resulting_power_old[0] = resulting_power[0];
             resulting_power_old[1] = resulting_power[1];
         }
-        
 
         //
         /*

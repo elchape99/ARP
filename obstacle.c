@@ -17,7 +17,7 @@
 
 #define MAX_OBST_ARR_SIZE 10
 // Seconds of upgrade of the obstacles
-#define N 10
+#define N 5
 
 //-- Functions header --------------------------------------------
 void writeLog(const char *format, ...);

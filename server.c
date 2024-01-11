@@ -207,6 +207,10 @@ int main(int argc, char *argv[])
     rowSH = Srow / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
     colSH = Scol / 2;
 
+    // stampare roba in ordine
+    int cur_x, cur_y;
+    //
+
     // varaibles for dynamics and forces
     // contain the position of obstacle and target
     double set_of_obstacle[MAX_OBST_ARR_SIZE][2];
@@ -254,7 +258,7 @@ int main(int argc, char *argv[])
         FD_SET(fdi_s[0], &read_fd);
 
         // time interval for select
-        time_sel.tv_sec = 5;
+        time_sel.tv_sec = 1;
         time_sel.tv_usec = 0;
 
         // ---------------fare select --------------------------------------------------------------
@@ -266,6 +270,9 @@ int main(int argc, char *argv[])
         else if (retVal_sel == 0)
         {
             printf("no new data\n"); // pipe vuota
+            getyx(stdscr, cur_y, cur_x);
+            move(cur_y, 0);
+            refresh();
             fflush(stdout);
         }
         else
@@ -286,6 +293,9 @@ int main(int argc, char *argv[])
                             writeLog("==> ERROR ==> server:read fdd_s[0], %m ");
                         }
                         printf("drone position %f, %f\n", dronePosition[0], dronePosition[1]);
+                        getyx(stdscr, cur_y, cur_x);
+                        move(cur_y, 0);
+                        refresh();
                         fflush(stdout);
                     }
                     else if (fd_array[i] == fdo_s[0]) // <<<< obstacle - server >>>>
@@ -296,7 +306,10 @@ int main(int argc, char *argv[])
                             perror("server: read fdo_s[0]");
                             writeLog("==> ERROR ==> server:read fdo_s[0], %m ");
                         }
-                        printf("obstacle %f, %li\n", set_of_obstacle[0][0], sizeof(set_of_obstacle) / (sizeof(double) * MAX_OBST_ARR_SIZE * 2));
+                        printf("obstacle %f, %li\n", set_of_obstacle[0][0], sizeof(set_of_obstacle) / (sizeof(double)));
+                        getyx(stdscr, cur_y, cur_x);
+                        move(cur_y, 0);
+                        refresh();
                         fflush(stdout);
                     }
                     else if (fd_array[i] == fdi_s[0]) // <<<< input - server >>>>
@@ -309,6 +322,9 @@ int main(int argc, char *argv[])
                             writeLog("==> ERROR ==> server:read fdi_s[0], %m ");
                         }
                         printf("input force %f, %f\n", inputForce[0], inputForce[1]);
+                        getyx(stdscr, cur_y, cur_x);
+                        move(cur_y, 0);
+                        refresh();
                         fflush(stdout);
                     }
                     else
@@ -388,11 +404,8 @@ int main(int argc, char *argv[])
     drone_pose_old.Ypos = drone_pose.Ypos;
     drone_pose_old.Xpos = drone_pose.Xpos;
     */
-   return 0;
-
+    return 0;
 }
-
-
 
 //// ---- Functions sections -----------------------------------------------------------
 WINDOW *create_new_window(int row, int col, int ystart, int xstart)

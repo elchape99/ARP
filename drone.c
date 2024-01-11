@@ -35,8 +35,6 @@ double *generate_y_force(double *vect_pointer, double *force); // somma input ne
 double *velocity(double Force, double initial_velocity, double *new_vel);     // data una forza calcola velocità sull'asse
 double *position(double Velocity, double initial_position, double *new_pose); // data una velocità calcola posizione sull'asse
 
-
-
 int main(int argc, char *argv[])
 {
 
@@ -190,13 +188,11 @@ int main(int argc, char *argv[])
         drone_position[0] = Xpos;
         drone_position[1] = Ypos;
 
-        if (write(fdd_s[1], drone_position, sizeof(double) * 2) < 0)
+        if (drone_position[0] == drone_position_old[0] && drone_position[1] == drone_position_old[1])
         {
-            perror("drone: write"); // controllo errore read
-            writeLog("==> ERROR ==> drone: write fdd_s[1] %m ");
+            printf("don't write \n");           
         }
-
-        if (drone_position[0] != drone_position_old[0] || drone_position[1] != drone_position_old[1])
+        else
         {
             // sending force data to the server process, trogh the pipe fdd_s[1]
             if (write(fdd_s[1], drone_position, sizeof(double) * 2) < 0)
@@ -208,12 +204,9 @@ int main(int argc, char *argv[])
             printf("%f, %f\n", drone_position[0], drone_position[1]);
             fflush(stdout);
             writeLog("drone: %f, %f", drone_position[0], drone_position[1]);
-
-            drone_position_old[0] = drone_position[0];
+             drone_position_old[0] = drone_position[0];
             drone_position_old[1] = drone_position[1];
         }
-        
-   
     }
 
     // close the read file descriptor for fdd_s
