@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
         }
         else
         { // nuovi dati disponibili
-            if ((retVal_read = read(fds_d[0], total_force, sizef(double) * 2)) < 0)
+            if ((retVal_read = read(fds_d[0], total_force, sizeof(double) * 2)) < 0)
             {
                 perror("errore read"); // controllo errore read
                 writeLog("ERROR ==> drone: read fds_d[0] %m ");
@@ -178,8 +178,8 @@ int main(int argc, char *argv[])
         }
 
         // genero valori di forza sui due assi
-        XForce_p = total_force[0];
-        YForce_p = total_force[1];
+        XForce = total_force[0];
+        YForce = total_force[1];
 
         // genera velocità
         Xvel_p = velocity(*XForce_p, *Xvel_p, Xvel_p);
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
         drone_position[0] = Xpos;
         drone_position[1] = Ypos;
 
-        if (write(fdd_s[1], drone_position, sizeof(double) * 2))
+        if (write(fdd_s[1], drone_position, sizeof(double) * 2) < 0)
         {
             perror("drone: write"); // controllo errore read
             writeLog("==> ERROR ==> drone: write fdd_s[1] %m ");
