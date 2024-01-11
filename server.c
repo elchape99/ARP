@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
                             perror("server: read fdo_s[0]");
                             writeLog("==> ERROR ==> server:read fdo_s[0], %m ");
                         }
-                        printf("obstacle %f, %i\n", set_of_obstacle[0], sizeof(set_of_obstacle) / (sizeof(double) * MAX_OBST_ARR_SIZE * 2));
+                        printf("obstacle %f, %li\n", set_of_obstacle[0][0], sizeof(set_of_obstacle) / (sizeof(double) * MAX_OBST_ARR_SIZE * 2));
                         fflush(stdout);
                     }
                     else if (fd_array[i] == fdi_s[0]) // <<<< input - server >>>>

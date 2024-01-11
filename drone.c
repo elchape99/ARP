@@ -35,12 +35,7 @@ double *generate_y_force(double *vect_pointer, double *force); // somma input ne
 double *velocity(double Force, double initial_velocity, double *new_vel);     // data una forza calcola velocità sull'asse
 double *position(double Velocity, double initial_position, double *new_pose); // data una velocità calcola posizione sull'asse
 
-// Define the struct for the drone position
-typedef struct
-{
-    double xPos;
-    double yPos;
-} DronePos;
+
 
 int main(int argc, char *argv[])
 {
@@ -135,6 +130,7 @@ int main(int argc, char *argv[])
     int retVal_read;
     double total_force[2] = {0.0};
     double drone_position[2] = {0.0};
+    double drone_position_old[2] = {0.0};
 
     // definizione variabili per la select
     int retVal_sel;
@@ -199,6 +195,24 @@ int main(int argc, char *argv[])
             perror("drone: write"); // controllo errore read
             writeLog("==> ERROR ==> drone: write fdd_s[1] %m ");
         }
+
+        if (drone_position[0] != drone_position_old[0] || drone_position[1] != drone_position_old[1])
+        {
+            // sending force data to the server process, trogh the pipe fdd_s[1]
+            if (write(fdd_s[1], drone_position, sizeof(double) * 2) < 0)
+            {
+                perror("drone: write fdd_s[1] ");
+                writeLog("==> ERROR ==> drone: write dd_s[1] %m ");
+            }
+
+            printf("%f, %f\n", drone_position[0], drone_position[1]);
+            fflush(stdout);
+            writeLog("drone: %f, %f", drone_position[0], drone_position[1]);
+
+            drone_position_old[0] = drone_position[0];
+            drone_position_old[1] = drone_position[1];
+        }
+        
    
     }
 

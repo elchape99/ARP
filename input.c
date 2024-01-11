@@ -17,7 +17,6 @@
 #include "arplib.h"
 
 #define WIND_NUMBER 12
- 
 
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
@@ -46,7 +45,6 @@ void writeLog(const char *format, ...)
         writeLog("ERROR ==> server: fclose logfile");
     }
 }
-
 
 // signals handler functions
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
@@ -87,7 +85,7 @@ int main(int argc, char *argv[])
     }
 
     ////---- Manage pipe ----------------------------------------------------------
-    
+
     //// pipe from master: fd2 are in position 1 and 2 of argv
     int fd2[2];
     for (i = 1; i < 3; i++)
@@ -95,7 +93,7 @@ int main(int argc, char *argv[])
         fd2[i - 1] = atoi(argv[i]);
     }
     writeLog("INPUT value of fd2 are: %d, %d ", fd2[0], fd2[1]);
-    
+
     // input need to write the pid inside the pipe
     // close the read file descriptor fd2[0]
     if (close(fd2[0]) < 0)
@@ -115,20 +113,20 @@ int main(int argc, char *argv[])
         perror("close fd2[1] input");
         writeLog("==> ERROR ==> input: close fd2[1] %m ");
     }
-    
+
     /// Take pipe fdi_s for comunication between input->server, they are in position 3, 4
     int fdi_s[2];
     for (i = 3; i < 5; i++)
     {
         fdi_s[i - 3] = atoi(argv[i]);
     }
-    // close the read file descriptor fdi_s[0], input only write in the pipe 
+    // close the read file descriptor fdi_s[0], input only write in the pipe
     if (close(fdi_s[0]) < 0)
     {
         perror("input: close fdi_s[0]");
         writeLog("==> ERROR ==> input: close fdi_s[0], %m ");
     }
-   
+
     ////---- Manage pipe end --------------------------------------------------------
 
     char input_char = '?'; // definisco la variabile di input
@@ -156,20 +154,24 @@ int main(int argc, char *argv[])
     WINDOW *down_left_butt;
     WINDOW *down_right_butt;
 
-
     char icon_string[WIND_NUMBER] = {'-', '-', 'Q', 'W', 'E', 'R', 'S', 'D', 'F', 'X', 'C', 'V'};
 
     int *active_power = (int *)malloc(WIND_NUMBER * sizeof(int));
-    for (int i = 0; i < WIND_NUMBER; i++){active_power[i] = 0;}
+    for (int i = 0; i < WIND_NUMBER; i++)
+    {
+        active_power[i] = 0;
+    }
     active_power[2] = -1;
     active_power[7] = -1;
 
     double resulting_power[2] = {0.0, 0.0};
+    double resulting_power_old[2] = {0.0, 0.0};
 
     WINDOW *wind_pointer_array[WIND_NUMBER] = {external_window, printing_window, quit_butt, up_left_butt, up_butt, up_right_butt, left_butt, central_butt, right_butt, down_left_butt, down_butt, down_right_butt};
 
     FILE *rules_text = fopen("rule.txt", "r");
-    if(rules_text == NULL){
+    if (rules_text == NULL)
+    {
         printf("null file pointer\n");
         fflush(stdout);
     }
@@ -196,46 +198,50 @@ int main(int argc, char *argv[])
 
     clear();
     refresh();
-    
+
     int indx = 0;
-    int indx_offset = (Srow - 21)/2; // da modificare se cambia il rule.txt
-    while((fgets(rule_line, sizeof(rule_line), rules_text)) != NULL)
+    int indx_offset = (Srow - 21) / 2; // da modificare se cambia il rule.txt
+    while ((fgets(rule_line, sizeof(rule_line), rules_text)) != NULL)
     {
-        mvprintw(indx+indx_offset, (Scol - strlen(rule_line))/2, "%s", rule_line);
+        mvprintw(indx + indx_offset, (Scol - strlen(rule_line)) / 2, "%s", rule_line);
         indx++;
     }
 
     refresh();
     fclose(rules_text);
 
-    while((start_char = getch()) != ' ')
+    while ((start_char = getch()) != ' ')
     {
         usleep(100);
     }
-    
+
     clear();
     refresh();
-    //inizio del gioco
+    // inizio del gioco
 
-    //open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
+    // open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
 
-    while((input_char = getch()) != 'q'){
+    while ((input_char = getch()) != 'q')
+    {
 
         active_power = manage_input(input_char, icon_string, active_power, resulting_power);
+        if (resulting_power[0] != resulting_power_old[0] || resulting_power[1] != resulting_power_old[1])
+        {
+            // sending force data to the server process, trogh the pipe fdi_s[1]
+            if (write(fdi_s[1], resulting_power, sizeof(double) * 2) < 0)
+            {
+                perror("input: write fdi_s[1] ");
+                writeLog("==> ERROR ==> input: write fdi_s[1] %m ");
+            }
 
-        // sending force data to the server process, trogh the pipe fdi_s[1]
-        if (write(fdi_s[1], resulting_power, sizeof(double)*2) < 0){
+            printf("%f, %f\n", resulting_power[0], resulting_power[1]);
+            fflush(stdout);
+            writeLog("input: %f, %f", resulting_power[0], resulting_power[1]);
 
-            perror("input: write fdi_s[1] ");
-            writeLog("==> ERROR ==> input: write fdi_s[1] %m ");
-
+            resulting_power_old[0] = resulting_power[0];
+            resulting_power_old[1] = resulting_power[1];
         }
-
-        printf("%f, %f\n", resulting_power[0], resulting_power[1]);
-        fflush(stdout);
-        writeLog("input: %f, %f", resulting_power[0], resulting_power[1]);
-
-
+        
 
         //
         /*
@@ -273,11 +279,6 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-
-
-
-
-
 ////--- Function section -------------------------------------------------------
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
 {
@@ -305,15 +306,16 @@ WINDOW *create_new_window(int row, int col, int ystart, int xstart, char icon, i
 
 void destroy_win(WINDOW *local_win)
 {
-    box(local_win, ' ', ' '); 
-    wborder(local_win, ' ', ' ', ' ',' ',' ',' ',' ',' ');
+    box(local_win, ' ', ' ');
+    wborder(local_win, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
     wrefresh(local_win);
     delwin(local_win);
 }
 
-int **generate_wind_info(int Srow, int Scol){
-    // external_window, printing_window, quit_butt, up_left_butt, up_butt, up_right_butt, 
-    //left_butt, central_butt, right_butt, down_left_butt, down_butt, down_right_butt
+int **generate_wind_info(int Srow, int Scol)
+{
+    // external_window, printing_window, quit_butt, up_left_butt, up_butt, up_right_butt,
+    // left_butt, central_butt, right_butt, down_left_butt, down_butt, down_right_butt
     int **wind_info = (int **)malloc(12 * sizeof(int *));
 
     for (int i = 0; i < 12; i++)
@@ -350,21 +352,21 @@ int **generate_wind_info(int Srow, int Scol){
     wind_info[2][1] = square_col * 2;
     wind_info[2][2] = 1;
     wind_info[2][3] = (int)((Scol - wind_info[2][1]) / 2);
-   
-    // up left button 
-    wind_info[3][0] = square_row; 
+
+    // up left button
+    wind_info[3][0] = square_row;
     wind_info[3][1] = square_col;
-    wind_info[3][2] = (center_y)-(square_row);
-    wind_info[3][3] = (center_x)-(square_col);
+    wind_info[3][2] = (center_y) - (square_row);
+    wind_info[3][3] = (center_x) - (square_col);
 
     // up button --> bottone su lungo
     wind_info[4][0] = square_row * 2;
     wind_info[4][1] = square_col;
-    wind_info[4][2] = center_y-(square_row * 2);
+    wind_info[4][2] = center_y - (square_row * 2);
     wind_info[4][3] = center_x;
 
     // up right button
-    wind_info[5][0] = square_row; 
+    wind_info[5][0] = square_row;
     wind_info[5][1] = square_col;
     wind_info[5][2] = center_y - square_row;
     wind_info[5][3] = center_x + square_col;
@@ -373,7 +375,7 @@ int **generate_wind_info(int Srow, int Scol){
     wind_info[6][0] = square_row;
     wind_info[6][1] = square_col * 2;
     wind_info[6][2] = center_y;
-    wind_info[6][3] = (center_x)-(square_col * 2);
+    wind_info[6][3] = (center_x) - (square_col * 2);
 
     // right button --> bottone destra lungo
     wind_info[8][0] = square_row;
@@ -382,7 +384,7 @@ int **generate_wind_info(int Srow, int Scol){
     wind_info[8][3] = center_x + square_col;
 
     // down left button
-    wind_info[9][0] = square_row; 
+    wind_info[9][0] = square_row;
     wind_info[9][1] = square_col;
     wind_info[9][2] = center_y + square_row;
     wind_info[9][3] = center_x - square_col;
@@ -393,9 +395,8 @@ int **generate_wind_info(int Srow, int Scol){
     wind_info[10][2] = center_y + square_row;
     wind_info[10][3] = center_x;
 
-
     // down right button
-    wind_info[11][0] = square_row; 
+    wind_info[11][0] = square_row;
     wind_info[11][1] = square_col;
     wind_info[11][2] = center_y + square_row;
     wind_info[11][3] = center_x + square_col;
@@ -403,11 +404,13 @@ int **generate_wind_info(int Srow, int Scol){
     return wind_info;
 }
 
-void open_control_window(int Srow, int Scol, WINDOW *array_pointer[], char *icon_string, int *active_power){
+void open_control_window(int Srow, int Scol, WINDOW *array_pointer[], char *icon_string, int *active_power)
+{
     int **local_array;
     local_array = generate_wind_info(Srow, Scol);
 
-    for(int i = 0; i < WIND_NUMBER; i++){
+    for (int i = 0; i < WIND_NUMBER; i++)
+    {
         array_pointer[i] = create_new_window(local_array[i][0], local_array[i][1], local_array[i][2], local_array[i][3], icon_string[i], i, active_power);
     }
 
@@ -419,49 +422,66 @@ void case_execution(char input_char, WINDOW *array_pointer[], char *icon_string,
     int pointer_index = 0;
     int BTy, BTx;
 
-    for(int i = 2; i < WIND_NUMBER; i++){
-        if(toupper(input_char) == icon_string[i]){
+    for (int i = 2; i < WIND_NUMBER; i++)
+    {
+        if (toupper(input_char) == icon_string[i])
+        {
             pointer_index = i;
         }
     }
 
-    if(pointer_index > 2 && pointer_index < WIND_NUMBER){
-        if(pointer_index == 7){
-            for(int i = 3; i < WIND_NUMBER; i++){
+    if (pointer_index > 2 && pointer_index < WIND_NUMBER)
+    {
+        if (pointer_index == 7)
+        {
+            for (int i = 3; i < WIND_NUMBER; i++)
+            {
                 getmaxyx(array_pointer[i], BTy, BTx);
                 print_on_button(array_pointer[i], icon_string[i], BTy, BTx, active_power[i]);
             }
-
-        }else{
+        }
+        else
+        {
             getmaxyx(array_pointer[pointer_index], BTy, BTx);
             print_on_button(array_pointer[pointer_index], icon_string[pointer_index], BTy, BTx, active_power[pointer_index]);
 
             print_on_window(array_pointer[1], input_char);
 
-            if(pointer_index >= 2){
-            color_blink(array_pointer[pointer_index]);
+            if (pointer_index >= 2)
+            {
+                color_blink(array_pointer[pointer_index]);
             }
         }
     }
 }
 
-int *manage_input(char input_char, char *icon_string, int *active_power, double *resulting_power){
+int *manage_input(char input_char, char *icon_string, int *active_power, double *resulting_power)
+{
     int pointer_index = 0;
-    for(int i = 3; i < WIND_NUMBER; i++){
-        if(toupper(input_char) == icon_string[i]){
+    for (int i = 3; i < WIND_NUMBER; i++)
+    {
+        if (toupper(input_char) == icon_string[i])
+        {
             pointer_index = i;
         }
     }
 
-    if(pointer_index > 2 && pointer_index < WIND_NUMBER){
-        if(pointer_index == 7){
-            for (int i = 0; i < WIND_NUMBER; i++){active_power[i] = 0;}
+    if (pointer_index > 2 && pointer_index < WIND_NUMBER)
+    {
+        if (pointer_index == 7)
+        {
+            for (int i = 0; i < WIND_NUMBER; i++)
+            {
+                active_power[i] = 0;
+            }
             active_power[2] = -1;
             active_power[7] = -1;
 
             resulting_power[1] = active_power[4] - active_power[10] + active_power[3] / 2.0 + active_power[5] / 2.0 - active_power[9] / 2.0 - active_power[11] / 2.0;
             resulting_power[0] = active_power[8] - active_power[6] + active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 - active_power[11] / 2.0;
-        }else{
+        }
+        else
+        {
             active_power[pointer_index] += 1;
 
             resulting_power[1] = active_power[4] - active_power[10] + active_power[3] / 2.0 + active_power[5] / 2.0 - active_power[9] / 2.0 - active_power[11] / 2.0;
@@ -474,12 +494,15 @@ int *manage_input(char input_char, char *icon_string, int *active_power, double 
 
 void print_on_button(WINDOW *pointer, char icon, int row, int col, int active_power)
 {
-    if(active_power == -1){
+    if (active_power == -1)
+    {
         char string[50];
         sprintf(string, "%c", icon);
         mvwaddstr(pointer, (row / 2), ((col - strlen(string)) / 2), string);
         wrefresh(pointer);
-    }else{
+    }
+    else
+    {
         char string[50];
         sprintf(string, "%c - %d", icon, active_power);
         mvwaddstr(pointer, (row / 2), ((col - strlen(string)) / 2), string);
@@ -487,7 +510,8 @@ void print_on_button(WINDOW *pointer, char icon, int row, int col, int active_po
     }
 }
 
-void print_on_window(WINDOW *print_pointer, char input_char){
+void print_on_window(WINDOW *print_pointer, char input_char)
+{
     int PRy, PRx;
     getmaxyx(print_pointer, PRy, PRx);
 
@@ -496,10 +520,10 @@ void print_on_window(WINDOW *print_pointer, char input_char){
     mvwaddstr(print_pointer, PRy / 2, ((PRx - strlen(string)) / 2), string);
     // wprintw(print_pointer, "valore controllo: %d", controllo);
     wrefresh(print_pointer);
-
 }
 
-void color_blink(WINDOW *color_pointer){
+void color_blink(WINDOW *color_pointer)
+{
 
     start_color();
     init_pair(2, COLOR_RED, COLOR_BLUE);
@@ -511,5 +535,4 @@ void color_blink(WINDOW *color_pointer){
     // Return to the default color
     wbkgd(color_pointer, COLOR_PAIR(1));
     wrefresh(color_pointer);
-
 }

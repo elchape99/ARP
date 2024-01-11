@@ -15,9 +15,9 @@
 #include <sys/ipc.h>
 #include "arplib.h"
 
-MAX_OBST_ARR_SIZE = 10;
+#define MAX_OBST_ARR_SIZE 10
 // Seconds of upgrade of the obstacles
-N = 10; 
+#define N 10
 
 //-- Functions header --------------------------------------------
 void writeLog(const char *format, ...);

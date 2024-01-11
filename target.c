@@ -17,7 +17,7 @@
 #include <sys/ipc.h>
 #include "arplib.h"
 
-MAX_TARG_ARR_SIZE = 10;
+#define MAX_TARG_ARR_SIZE 10
 
 // Function header
 void writeLog(const char *format, ...);
