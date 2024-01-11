@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <sys/wait.h>
 #include <ncurses.h>
+#include <ctype.h>
 #include "arplib.h"
 
 #define WIND_NUMBER 12

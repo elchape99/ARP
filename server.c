@@ -136,9 +136,9 @@ int main(int argc, char *argv[])
 
     //// Take the fds_t dor the comunication between server -> drone, are in positions 11, 12
     int fds_d[2];
-    for (i = 5; i < 7; i++)
+    for (i = 11; i < 13; i++)
     {
-        fds_d[i - 5] = atoi(argv[i]);
+        fds_d[i - 11] = atoi(argv[i]);
     }
     // close the write file descriptor fds_d[1]
     if (close(fds_d[1]) < 0)
@@ -254,8 +254,8 @@ int main(int argc, char *argv[])
         FD_SET(fdi_s[0], &read_fd);
 
         // time interval for select
-        time_sel.tv_sec = 0;
-        time_sel.tv_usec = 30000;
+        time_sel.tv_sec = 5;
+        time_sel.tv_usec = 0;
 
         // ---------------fare select --------------------------------------------------------------
         if ((retVal_sel = select(max_fd + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
@@ -271,129 +271,128 @@ int main(int argc, char *argv[])
         else
         {
             // check wich file descriptor have data inside
-            for (i = 0; i < (sizeof(fd_array) / sizeof(int)), i++)
+            for (i = 0; i < (sizeof(fd_array) / sizeof(int)); i++)
             {
                 // check if the fd is inside the ready file descriptor set
                 if (FD_ISSET(fd_array[i], &read_fd))
                 {
-                    // read the data from the file secriptor 
-                    switch (fd_array[i])
+
+                    if (fd_array[i] == fdd_s[0]) // <<<< drone - server >>>>
                     {
-                    // <<<< drone - server >>>>
-                    case fdd_s[0]: 
                         // read the position from the drone
                         if (read(fdd_s[0], dronePosition, sizeof(double) * 2) == -1)
                         {
                             perror("server: read fdd_s[0]");
                             writeLog("==> ERROR ==> server:read fdd_s[0], %m ");
                         }
-                        printf("drone position %f, %f",dronePosition[0], dronePosition[1]);
+                        printf("drone position %f, %f\n", dronePosition[0], dronePosition[1]);
                         fflush(stdout);
-                        break;
-
-                    // <<<< obstacle - server >>>>
-                    case fdo_s[0]: 
+                    }
+                    else if (fd_array[i] == fdo_s[0]) // <<<< obstacle - server >>>>
+                    {
                         // read the set of obstacle
                         if (read(fdo_s[0], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
                         {
                             perror("server: read fdo_s[0]");
                             writeLog("==> ERROR ==> server:read fdo_s[0], %m ");
                         }
-                        printf("obstacle %f, %d", set_of_obstacle[0], sizeof(set_of_obstacle)/(sizeof(double) * MAX_OBST_ARR_SIZE * 2));
+                        printf("obstacle %f, %i\n", set_of_obstacle[0], sizeof(set_of_obstacle) / (sizeof(double) * MAX_OBST_ARR_SIZE * 2));
                         fflush(stdout);
-                        break;
-    
-                    // <<<< input - server >>>>
-                    case fdi_s[0]:
+                    }
+                    else if (fd_array[i] == fdi_s[0]) // <<<< input - server >>>>
+                    {
+
                         // read the input force
                         if (read(fdi_s[0], inputForce, sizeof(double) * 2) == -1)
                         {
                             perror("server: read fdi_s[0]");
                             writeLog("==> ERROR ==> server:read fdi_s[0], %m ");
                         }
-                        printf("input force %f, %f",inputForce[0], inputForce[1]);
+                        printf("input force %f, %f\n", inputForce[0], inputForce[1]);
                         fflush(stdout);
-                        break;
-
-                    default:
+                    }
+                    else
+                    {
                         break;
                     }
                 }
             }
         }
-
-        //------------------ furoi dalla select -----------------------------------
-        /*
-                // obtain obstacle position
-                for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
-                {
-                    set_of_obstacle[i][0] = set_of_obstacle[i][0] * colSH;
-                    set_of_obstacle[i][1] = set_of_obstacle[i][0] * rowSH;
-
-                    // cassare ostacoli sopra drone
-                }
-
-                // Compute obstacle Force
-                for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
-                {
-                    // computate the xForce
-                    obstForce[0] = obstForce[0] + ((k * inputForce[0]) / ((set_of_obstacle[i][0] - dronePosition[0]) ^ 2));
-                    // computate the yForce
-                    obstForce[1] = obstForce[1] + ((k * inputForce[1]) / ((set_of_obstacle[i][1] - dronePosition[1]) ^ 2));
-                }
-
-                // compute the targetForce
-                for (i = 0; i < (sizeof(set_of_target) / sizeof(set_of_target[0])); i++)
-                {
-                    // computate the xForce
-                    trgetForce[0] = targetForce[0] + ((k * inputForce[0]) / ((set_of_target[i][0] - dronePosition[0]) ^ 2));
-                    // computate the yForce
-                    targetForce[1] = obstForce[1] + ((k * inputForce[1]) / ((set_of_target[i][1] - dronePosition[1]) ^ 2));
-                }
-
-                // Compute total Force x:
-                totalForce[0] = inputForce[0] - obstForce[0] + targetForce[0];
-                // Compute total force y:
-                totalForce[1] = inputForce[1] - obstForce[1] + targetForce[1];
-
-                //// CREARE PIPE NEL MASTER FDS_d/////////////////////////
-                if (write(fds_d[1], totalForce, sizeof(double) * 2) == -1)
-                {
-                    perror("server: erite fds_d[1]");
-                    writeLog("==> ERROR ==> server: write fds_d[1], %m ");
-                }
-            /*
-                // Print some value for control
-                for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
-                {
-                    printf("set of target");
-                    printf("%f, %f \n", set_of_target[i][0], set_of_target[i][1]);
-                    fflush(stdout);
-                }
-                for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
-                {
-                    printf("set of obstacle");
-                    printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
-                    fflush(stdout);
-                }
-                */
-        /*
-        if ((int)drone_pose.Ypos == (int)drone_pose_old.Ypos && (int)drone_pose.Xpos == (int)drone_pose_old.Xpos)
-        {
-            continue;
-        }
-        else
-        {
-            move_drone_icon(rowSH - (int)drone_pose.Ypos, colSH + (int)drone_pose.Xpos, map_window);
-        }
-
-        drone_pose_old.Ypos = drone_pose.Ypos;
-        drone_pose_old.Xpos = drone_pose.Xpos;
-        */
     }
 
-    return 0;
+    //------------------ furoi dalla select -----------------------------------
+    /*
+            // obtain obstacle position
+            for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+            {
+                set_of_obstacle[i][0] = set_of_obstacle[i][0] * colSH;
+                set_of_obstacle[i][1] = set_of_obstacle[i][0] * rowSH;
+
+                // cassare ostacoli sopra drone
+            }
+
+            // Compute obstacle Force
+            for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+            {
+                // computate the xForce
+                obstForce[0] = obstForce[0] + ((k * inputForce[0]) / ((set_of_obstacle[i][0] - dronePosition[0]) ^ 2));
+                // computate the yForce
+                obstForce[1] = obstForce[1] + ((k * inputForce[1]) / ((set_of_obstacle[i][1] - dronePosition[1]) ^ 2));
+            }
+
+            // compute the targetForce
+            for (i = 0; i < (sizeof(set_of_target) / sizeof(set_of_target[0])); i++)
+            {
+                // computate the xForce
+                trgetForce[0] = targetForce[0] + ((k * inputForce[0]) / ((set_of_target[i][0] - dronePosition[0]) ^ 2));
+                // computate the yForce
+                targetForce[1] = obstForce[1] + ((k * inputForce[1]) / ((set_of_target[i][1] - dronePosition[1]) ^ 2));
+            }
+
+            // Compute total Force x:
+            totalForce[0] = inputForce[0] - obstForce[0] + targetForce[0];
+            // Compute total force y:
+            totalForce[1] = inputForce[1] - obstForce[1] + targetForce[1];
+
+            //// CREARE PIPE NEL MASTER FDS_d/////////////////////////
+            if (write(fds_d[1], totalForce, sizeof(double) * 2) == -1)
+            {
+                perror("server: erite fds_d[1]");
+                writeLog("==> ERROR ==> server: write fds_d[1], %m ");
+            }
+        /*
+            // Print some value for control
+            for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
+            {
+                printf("set of target");
+                printf("%f, %f \n", set_of_target[i][0], set_of_target[i][1]);
+                fflush(stdout);
+            }
+            for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+            {
+                printf("set of obstacle");
+                printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
+                fflush(stdout);
+            }
+            */
+    /*
+    if ((int)drone_pose.Ypos == (int)drone_pose_old.Ypos && (int)drone_pose.Xpos == (int)drone_pose_old.Xpos)
+    {
+        continue;
+    }
+    else
+    {
+        move_drone_icon(rowSH - (int)drone_pose.Ypos, colSH + (int)drone_pose.Xpos, map_window);
+    }
+
+    drone_pose_old.Ypos = drone_pose.Ypos;
+    drone_pose_old.Xpos = drone_pose.Xpos;
+    */
+   return 0;
+
 }
+
+
 
 //// ---- Functions sections -----------------------------------------------------------
 WINDOW *create_new_window(int row, int col, int ystart, int xstart)

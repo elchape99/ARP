@@ -30,7 +30,6 @@ int main(int argc, char *argv[])
     int i;
     pid_t obstacle_pid = getpid();
     // write into logfile the pid
-    Position obstacle_pos;
     writeLog("OBSTACLE create with pid %d ", obstacle_pid);
 
     // configure the handler for sigusr1
