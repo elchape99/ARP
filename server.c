@@ -238,20 +238,24 @@ int main(int argc, char *argv[])
     fd_set read_fd;
     struct timeval time_sel;
 
+    // define the array wit all the read file descritor
+    int fd_array[3] = {fdd_s[0], fdo_s[0], fdi_s[0]};
+    // find the maximum fd
+    int max_fd;
+    max_fd = (fdd_s[0] > fdo_s[0]) ? fdd_s[0] : fdo_s[0];
+    max_fd = (max_fd > fdi_s[0]) ? max_fd : fdi_s[0];
+
     while (1)
     {
-        // defininizione dei set dei file descriptor
+        // define the set of fd
         FD_ZERO(&read_fd);
         FD_SET(fdd_s[0], &read_fd);
         FD_SET(fdo_s[0], &read_fd);
         FD_SET(fdi_s[0], &read_fd);
 
+        // time interval for select
         time_sel.tv_sec = 0;
         time_sel.tv_usec = 30000;
-
-        int max_fd;
-        max_fd = (fdd_s[0] > fdo_s[0]) ? fdd_s[0] : fdo_s[0];
-        max_fd = (max_fd > fdi_s[0]) ? max_fd : fdi_s[0];
 
         // ---------------fare select --------------------------------------------------------------
         if ((retVal_sel = select(max_fd + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
@@ -266,14 +270,55 @@ int main(int argc, char *argv[])
         }
         else
         {
-            if (FD_ISSET(fdi_s[0], &readfds))
-            { // massima priorità
-            }
-            else if (FD_ISSET(fdd_s[0], &readfds))
+            // check wich file descriptor have data inside
+            for (i = 0; i < (sizeof(fd_array) / sizeof(int)), i++)
             {
-            }
-            else if (FD_ISSET(fdo_s[0], &readfds))
-            { // minima priorità
+                // check if the fd is inside the ready file descriptor set
+                if (FD_ISSET(fd_array[i], &read_fd))
+                {
+                    // read the data from the file secriptor 
+                    switch (fd_array[i])
+                    {
+                    // <<<< drone - server >>>>
+                    case fdd_s[0]: 
+                        // read the position from the drone
+                        if (read(fdd_s[0], dronePosition, sizeof(double) * 2) == -1)
+                        {
+                            perror("server: read fdd_s[0]");
+                            writeLog("==> ERROR ==> server:read fdd_s[0], %m ");
+                        }
+                        printf("drone position %f, %f",dronePosition[0], dronePosition[1]);
+                        fflush(stdout);
+                        break;
+
+                    // <<<< obstacle - server >>>>
+                    case fdo_s[0]: 
+                        // read the set of obstacle
+                        if (read(fdo_s[0], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
+                        {
+                            perror("server: read fdo_s[0]");
+                            writeLog("==> ERROR ==> server:read fdo_s[0], %m ");
+                        }
+                        printf("obstacle %f, %d", set_of_obstacle[0], sizeof(set_of_obstacle)/(sizeof(double) * MAX_OBST_ARR_SIZE * 2));
+                        fflush(stdout);
+                        break;
+    
+                    // <<<< input - server >>>>
+                    case fdi_s[0]:
+                        // read the input force
+                        if (read(fdi_s[0], inputForce, sizeof(double) * 2) == -1)
+                        {
+                            perror("server: read fdi_s[0]");
+                            writeLog("==> ERROR ==> server:read fdi_s[0], %m ");
+                        }
+                        printf("input force %f, %f",inputForce[0], inputForce[1]);
+                        fflush(stdout);
+                        break;
+
+                    default:
+                        break;
+                    }
+                }
             }
         }
 
@@ -369,7 +414,7 @@ void move_drone_icon(int row, int col, WINDOW *map_wind_pointer)
 }
 
 /*
-// read the position from the drone
+        // read the position from the drone
         if (read(fdd_s[0], dronePosition, sizeof(double) * 2) == -1)
         {
             perror("server: read fdd_s[0]");

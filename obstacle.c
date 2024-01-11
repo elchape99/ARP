@@ -17,7 +17,7 @@
 
 MAX_OBST_ARR_SIZE = 10;
 // Seconds of upgrade of the obstacles
-N = 5; 
+N = 10; 
 
 //-- Functions header --------------------------------------------
 void writeLog(const char *format, ...);
