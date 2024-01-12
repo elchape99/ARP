@@ -263,7 +263,7 @@ int main(int argc, char *argv[])
         time_sel.tv_sec = 1;
         time_sel.tv_usec = 0;
 
-        // ---------------fare select --------------------------------------------------------------
+        // select for check the value 
         if ((retVal_sel = select(max_fd + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
         {
             perror("server: error select: ");
@@ -341,9 +341,9 @@ int main(int argc, char *argv[])
     //------------------ furoi dalla select -----------------------------------
 
     // obtain obstacle position
+    int obst_array_size = MAX_OBST_ARR_SIZE;
     for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
-    {
-       
+    {       
         // if true spawn the obstacle
         if (spawn_autorization(set_of_obstacle[i][0], set_of_obstacle[1][1], dronePosition[0], dronePosition[1]))
         {   
@@ -355,11 +355,11 @@ int main(int argc, char *argv[])
         {
             set_of_obstacle[i][0] = -1; // negative position are not printed by ncurses
             set_of_obstacle[i][1] = -1;
+            obst_array_size --;        
         }
     }
-
     // Compute obstacle Force
-    for (i = 0; i < ; i++)
+    for (i = 0; i < obst_array_size; i++)
     {
         // computate the xForce
         obstForce[0] = obstForce[0] + ((k * inputForce[0]) / ((set_of_obstacle[i][0] - dronePosition[0]) ^ 2));
@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
         obstForce[1] = obstForce[1] + ((k * inputForce[1]) / ((set_of_obstacle[i][1] - dronePosition[1]) ^ 2));
     }
 
-    // compute the targetForce
+    // compute target Force
     for (i = 0; i < (sizeof(set_of_target) / sizeof(set_of_target[0])); i++)
     {
         // computate the xForce
@@ -381,7 +381,7 @@ int main(int argc, char *argv[])
     // Compute total force y:
     totalForce[1] = inputForce[1] - obstForce[1] + targetForce[1];
 
-    //// CREARE PIPE NEL MASTER FDS_d/////////////////////////
+    // write force to drone
     if (write(fds_d[1], totalForce, sizeof(double) * 2) == -1)
     {
         perror("server: erite fds_d[1]");
