@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
     refresh();
     // inizio del gioco
 
-    // open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
+    open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
 
     while ((input_char = getch()) != 'q')
     {
@@ -247,17 +247,19 @@ int main(int argc, char *argv[])
         }
 
         //
-        /*
+
         case_execution(input_char, wind_pointer_array, icon_string, active_power);
 
         getmaxyx(stdscr, SrowNew, ScolNew);
-        if (SrowNew != Srow || ScolNew != Scol){
+        if (SrowNew != Srow || ScolNew != Scol)
+        {
             Scol = ScolNew;
             Srow = SrowNew;
 
             clear();
 
-            for(int i = 0; i < WIND_NUMBER; i++){
+            for (int i = 0; i < WIND_NUMBER; i++)
+            {
                 destroy_win(wind_pointer_array[i]);
             }
 
@@ -265,7 +267,6 @@ int main(int argc, char *argv[])
 
             open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
         }
-        */
     }
     // free memory
     free(active_power);
@@ -500,6 +501,7 @@ void print_on_button(WINDOW *pointer, char icon, int row, int col, int active_po
     if (active_power == -1)
     {
         char string[50];
+
         sprintf(string, "%c", icon);
         mvwaddstr(pointer, (row / 2), ((col - strlen(string)) / 2), string);
         wrefresh(pointer);
@@ -507,6 +509,7 @@ void print_on_button(WINDOW *pointer, char icon, int row, int col, int active_po
     else
     {
         char string[50];
+
         sprintf(string, "%c - %d", icon, active_power);
         mvwaddstr(pointer, (row / 2), ((col - strlen(string)) / 2), string);
         wrefresh(pointer);
