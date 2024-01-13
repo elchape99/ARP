@@ -60,7 +60,7 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context)
 }
 
 WINDOW *create_new_window(int row, int col, int ystart, int xstart); // creazione delle finestre
-void move_drone_icon(int row, int col, WINDOW *map_wind_pointer);
+
 
 bool spawn_autorization(int obst_x, int obst_y, int drone_x, int drone_y);
 
@@ -143,11 +143,13 @@ int main(int argc, char *argv[])
         fds_d[i - 11] = atoi(argv[i]);
     }
     // close the write file descriptor fds_d[1]
-    if (close(fds_d[1]) < 0)
-    {
-        perror("drone: close fds_d[1]");
-        writeLog("ERROR ==> drone close fds_d[1] %m ");
-    }
+    /* no need to close write fd from server to drone
+        if (close(fds_d[]) < 0)
+        {
+            perror("drone: close fds_d[1]");
+            writeLog("ERROR ==> drone close fds_d[1] %m ");
+        }
+    */
     writeLog("SERVER value of fds_d are: %d %d ", fds_d[0], fds_d[1]);
 
     //// Take the fdt_s for comunication between targer-server, position 7, 8
@@ -183,7 +185,6 @@ int main(int argc, char *argv[])
     //////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // parte legata ad ncurses per il server
-    WINDOW *map_window; // definizione puntatore alla mappa
     int Srow, Scol;     // righe e colonne massime dello schermo
     int rowSH, colSH;
     // initialization row
@@ -197,17 +198,8 @@ int main(int argc, char *argv[])
     rowSH = Srow / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
     colSH = Scol / 2;
 
-    // creo la finestra della mappa
-    // map_window = create_new_window(Srow, Scol, 0, 0);
-    // move_drone_icon(rowSH - (int)pose->Ypos, colSH + (int)pos->Xpos, map_window);
-    raw();
-    cbreak();
-    noecho();
-    keypad(stdscr, TRUE);
-
-    getmaxyx(stdscr, Srow, Scol);
-    rowSH = Srow / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
-    colSH = Scol / 2;
+    int spawn_Col = Scol - 2;
+    int spawn_Row = Srow - 2;
 
     // stampare roba in ordine
     int cur_x, cur_y;
@@ -235,8 +227,8 @@ int main(int argc, char *argv[])
     // moltiply the target for the windows size
     for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
     {
-        set_of_target[i][0] = set_of_target[i][0] * colSH;
-        set_of_target[i][1] = set_of_target[i][0] * rowSH;
+        set_of_target[i][0] = set_of_target[i][0] * spawn_Col;
+        set_of_target[i][1] = set_of_target[i][0] * spawn_Row;
     }
 
     // definizione variaili della select
@@ -251,8 +243,15 @@ int main(int argc, char *argv[])
     max_fd = (fdd_s[0] > fdo_s[0]) ? fdd_s[0] : fdo_s[0];
     max_fd = (max_fd > fdi_s[0]) ? max_fd : fdi_s[0];
 
+    // variabili di controllo per evitare di ristampare la mappa al ritmo del while
+    int new_position, new_obstacles;
+
     while (1)
     {
+        // azzero controlli di stampa
+        new_position = 0;
+        new_obstacles = 0;
+
         // define the set of fd
         FD_ZERO(&read_fd);
         FD_SET(fdd_s[0], &read_fd);
@@ -271,11 +270,11 @@ int main(int argc, char *argv[])
         }
         else if (retVal_sel == 0)
         {
-            printf("no new data\n"); // pipe vuota
+            /*printf("no new data\n"); // pipe vuota
             getyx(stdscr, cur_y, cur_x);
             move(cur_y, 0);
             refresh();
-            fflush(stdout);
+            fflush(stdout);*/
         }
         else
         {
@@ -294,11 +293,12 @@ int main(int argc, char *argv[])
                             perror("server: read fdd_s[0]");
                             writeLog("==> ERROR ==> server:read fdd_s[0], %m ");
                         }
-                        printf("drone position %f, %f\n", dronePosition[0], dronePosition[1]);
+                        /*printf("drone position %f, %f\n", dronePosition[0], dronePosition[1]);
                         getyx(stdscr, cur_y, cur_x);
                         move(cur_y, 0);
                         refresh();
-                        fflush(stdout);
+                        fflush(stdout);*/
+                        new_position = 1;
                     }
                     else if (fd_array[i] == fdo_s[0]) // <<<< obstacle - server >>>>
                     {
@@ -308,11 +308,19 @@ int main(int argc, char *argv[])
                             perror("server: read fdo_s[0]");
                             writeLog("==> ERROR ==> server:read fdo_s[0], %m ");
                         }
-                        printf("obstacle %f, %li\n", set_of_obstacle[0][0], sizeof(set_of_obstacle) / (sizeof(double)));
+                        // note: mettere questo fuori dall'if della select mi porta a ri moltiplicare per ogni iterazione del ciclo wile
+                        // così in teoria una volta letto dalla pipe set_of_obstacle viene sovrascritto e quindi non ci sono problemi
+                        for(i = 0; i < MAX_OBST_ARR_SIZE; i++){
+                            set_of_obstacle[i][0] = set_of_obstacle[i][0] * spawn_Col;
+                            set_of_obstacle[i][1] = set_of_obstacle[i][1] * spawn_Row;
+                        }
+                        /*printf("obstacle %f, %li\n", set_of_obstacle[0][0], sizeof(set_of_obstacle) / (sizeof(double)));
                         getyx(stdscr, cur_y, cur_x);
                         move(cur_y, 0);
                         refresh();
-                        fflush(stdout);
+                        fflush(stdout);*/
+
+                        new_obstacles = 1;
                     }
                     else if (fd_array[i] == fdi_s[0]) // <<<< input - server >>>>
                     {
@@ -323,11 +331,11 @@ int main(int argc, char *argv[])
                             perror("server: read fdi_s[0]");
                             writeLog("==> ERROR ==> server:read fdi_s[0], %m ");
                         }
-                        printf("input force %f, %f\n", inputForce[0], inputForce[1]);
+                        /*printf("input force %f, %f\n", inputForce[0], inputForce[1]);
                         getyx(stdscr, cur_y, cur_x);
                         move(cur_y, 0);
                         refresh();
-                        fflush(stdout);
+                        fflush(stdout);*/
                     }
                     else
                     {
@@ -342,13 +350,14 @@ int main(int argc, char *argv[])
 
         // obtain obstacle position
 
+        /*
         for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
         {
             // if true spawn the obstacle
             if (spawn_autorization(set_of_obstacle[i][0], set_of_obstacle[1][1], dronePosition[0], dronePosition[1]))
             {
-                set_of_obstacle[i][0] = (set_of_obstacle[i][0] * colSH);
-                set_of_obstacle[i][1] = (set_of_obstacle[i][0] * rowSH);
+                set_of_obstacle[i][0] = (set_of_obstacle[i][0] * Scol);
+                set_of_obstacle[i][1] = (set_of_obstacle[i][0] * Srow);
             }
             else
             // set the vaue of obstacle out the rappresentation of Ncurses
@@ -356,7 +365,15 @@ int main(int argc, char *argv[])
                 set_of_obstacle[i][0] = -1; // negative position are not printed by ncurses
                 set_of_obstacle[i][1] = -1;
             }
+        }*/
+
+        /*
+        for(i = 0; i < MAX_OBST_ARR_SIZE; i++){
+            printf("obstacle %f, %f\n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
+            fflush(stdout); 
         }
+        sleep(1); ////////////////// DELETE THIS LINE
+        */
 
         double k;
         // Compute obstacle Force
@@ -406,6 +423,44 @@ int main(int argc, char *argv[])
             perror("server: erite fds_d[1]");
             writeLog("==> ERROR ==> server: write fds_d[1], %m ");
         }
+        
+        
+        if(new_obstacles == 1 || new_position == 1){
+            /*
+            // clear the map window
+            wclear(stdscr);
+
+            // print the box of the map
+            box(stdscr, 0, 0);
+
+            // print the drone icon
+            mvwaddch(stdscr, rowSH - (int)dronePosition[1], colSH + (int)dronePosition[0], DRONE_ICON);
+
+
+            // print the obstacle
+            for (i = 0; i < MAX_OBST_ARR_SIZE; i++) {
+                if ((int)set_of_obstacle[i][0] != -1 && (int)set_of_obstacle[i][1] != -1) {
+                    mvwaddch(stdscr, (int)set_of_obstacle[i][1], (int)set_of_obstacle[i][0], 'O');
+                }   
+            }
+
+            
+            // print the target
+            for(i=0; i < MAX_TARG_ARR_SIZE; i++){
+                if((int)set_of_target[i][0] != -1 && (int)set_of_target[i][1] != -1){
+                    mvwaddch(stdscr, (int)set_of_target[i][1], (int)set_of_target[i][0], 'T');
+                }
+            }
+
+            refresh();
+            
+            
+            */
+
+           printf("sto aggiornando la mappa\n");
+           fflush(stdout);
+        } 
+        
         /*
             // Print some value for control
             for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
@@ -420,40 +475,28 @@ int main(int argc, char *argv[])
                 printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
                 fflush(stdout);
             }
-            */
-        /*
-        if ((int)drone_pose.Ypos == (int)drone_pose_old.Ypos && (int)drone_pose.Xpos == (int)drone_pose_old.Xpos)
-        {
-            continue;
-        }
-        else
-        {
-            move_drone_icon(rowSH - (int)drone_pose.Ypos, colSH + (int)drone_pose.Xpos, map_window);
-        }
-
-        drone_pose_old.Ypos = drone_pose.Ypos;
-        drone_pose_old.Xpos = drone_pose.Xpos;
         */
+
+        // gestione del resize della finestra
+        getmaxyx(stdscr, Srow, Scol);
+        rowSH = Srow / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
+        colSH = Scol / 2;
+
+        spawn_Col = Scol - 2;
+        spawn_Row = Srow - 2;
     } // while(1) end --> if all the target are reached, we exit from this cycle
+
+
     return 0;
 }
 
 //// ---- Functions sections -----------------------------------------------------------
-WINDOW *create_new_window(int row, int col, int ystart, int xstart)
-{
+WINDOW *create_new_window(int row, int col, int ystart, int xstart){
     WINDOW *local_window = newwin(row, col, ystart, xstart);
     box(local_window, 0, 0);
 
     wrefresh(local_window);
     return local_window;
-}
-
-void move_drone_icon(int row, int col, WINDOW *map_wind_pointer)
-{
-    wclear(map_wind_pointer); // pulisco la finestra da qualsiasi cosa
-    box(map_wind_pointer, 0, 0);
-    mvwaddch(map_wind_pointer, row, col, DRONE_ICON);
-    wrefresh(map_wind_pointer);
 }
 
 bool spawn_autorization(int obst_x, int obst_y, int drone_x, int drone_y)
@@ -475,4 +518,4 @@ bool spawn_autorization(int obst_x, int obst_y, int drone_x, int drone_y)
     return true;
 }
 
-
+    

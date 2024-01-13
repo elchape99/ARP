@@ -126,9 +126,9 @@ int main(int argc, char *argv[])
     double *Xvel_p = &Xvel, *Xpos_p = &Xpos, *Yvel_p = &Yvel, *Ypos_p = &Ypos;
 
     int retVal_read;
-    double total_force[2] = {0.0};
-    double drone_position[2] = {0.0};
-    double drone_position_old[2] = {0.0};
+    double total_force[2] = {0.0, 0.0};
+    double drone_position[2] = {0.0, 0.0};
+    double drone_position_old[2] = {0.0, 0.0};
 
     // definizione variabili per la select
     int retVal_sel;
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
             printf("%f, %f\n", drone_position[0], drone_position[1]);
             fflush(stdout);
             writeLog("drone: %f, %f", drone_position[0], drone_position[1]);
-             drone_position_old[0] = drone_position[0];
+            drone_position_old[0] = drone_position[0];
             drone_position_old[1] = drone_position[1];
         }
     }

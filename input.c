@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
         active_power = manage_input(input_char, icon_string, active_power, resulting_power);
         if (resulting_power[0] == resulting_power_old[0] && resulting_power[1] == resulting_power_old[1])
         {
-            printf("no print \n");
+            //printf("no print \n");
         }
         else
         {
@@ -238,8 +238,8 @@ int main(int argc, char *argv[])
                 writeLog("==> ERROR ==> input: write fdi_s[1] %m ");
             }
 
-            printf("%f, %f\n", resulting_power[0], resulting_power[1]);
-            fflush(stdout);
+            //printf("%f, %f\n", resulting_power[0], resulting_power[1]);
+            //fflush(stdout);
             writeLog("input: %f, %f", resulting_power[0], resulting_power[1]);
 
             resulting_power_old[0] = resulting_power[0];
@@ -509,6 +509,11 @@ void print_on_button(WINDOW *pointer, char icon, int row, int col, int active_po
     else
     {
         char string[50];
+
+        wclear(pointer);
+        wrefresh(pointer);
+
+        box(pointer, 0, 0);
 
         sprintf(string, "%c - %d", icon, active_power);
         mvwaddstr(pointer, (row / 2), ((col - strlen(string)) / 2), string);
