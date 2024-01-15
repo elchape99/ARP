@@ -487,6 +487,10 @@ int *manage_input(char input_char, char *icon_string, int *active_power, double 
         else
         {
             active_power[pointer_index] += 1;
+            
+            if (active_power[pointer_index] > 5){
+                active_power[pointer_index] -= 1;
+            }
 
             resulting_power[1] = active_power[4] - active_power[10] + active_power[3] / 2.0 + active_power[5] / 2.0 - active_power[9] / 2.0 - active_power[11] / 2.0;
             resulting_power[0] = active_power[8] - active_power[6] + active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 - active_power[11] / 2.0;
