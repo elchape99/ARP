@@ -18,6 +18,13 @@
 
 #define INP_NUM 8
 
+#define SSLOW 500
+#define SLOW 300
+#define MEDIUM 200
+#define FAST 100
+#define FFAST 50
+#define CYCLE 1
+
 /////--- Functions heder --------------------------------------------------------------------------------------
 
 /* function for write in logfile*/
@@ -25,7 +32,6 @@ void writeLog(const char *format, ...);
 
 /* signal handler functions, when receive a ignal from watchdog sena bach a signal*/
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
-
 
 double *velocity(double Force, double initial_velocity, double *new_vel);     // data una forza calcola velocità sull'asse
 double *position(double Velocity, double initial_position, double *new_pose); // data una velocità calcola posizione sull'asse
@@ -132,8 +138,8 @@ int main(int argc, char *argv[])
 
     // ciclo infinito per ricever input dal server
 
-    //variabili del momento per non stampare a nastro
-    int indx = 0;
+    // variabili del momento per non stampare a nastro
+    int speed_index = 0;
 
     // DRONE MANDA POSIZIONE DALLA PIPE fdd_s
     while (1)
@@ -142,14 +148,15 @@ int main(int argc, char *argv[])
         FD_ZERO(&read_fd);
         FD_SET(fds_d[0], &read_fd); // definisco il set dei fd da controllare
 
-        time_sel.tv_sec = 1; // timeout settatto a 0.5 secondi
-        time_sel.tv_usec = 0;
+        time_sel.tv_sec = 0; // timeout settatto a 0.5 secondi
+        time_sel.tv_usec = 3000;
 
         if ((retVal_sel = select(fds_d[0] + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
         {
             perror("drone: error select: "); // controllo errori
             writeLog("ERROR ==> drone: select fds_d[0] %m ");
-        }else
+        }
+        else
         { // nuovi dati disponibili
             if ((retVal_read = read(fds_d[0], total_force, sizeof(double) * 2)) < 0)
             {
@@ -158,45 +165,55 @@ int main(int argc, char *argv[])
             }
             else
             {
-                if((indx%500)==0){
+                if ((speed_index % SSLOW) == 0)
+                {
                     printf("--->controllo lettura: %d, ( %f, %f )\n", retVal_read, total_force[0], total_force[1]); // controllo valori lettura
                     fflush(stdout);
                 }
             }
         }
 
-        // genero valori di forza sui due assi
-        XForce = total_force[0];
-        YForce = total_force[1];
+        if ((speed_index % FAST) == 0)
+        {
+            // genero valori di forza sui due assi
+            XForce = total_force[0];
+            YForce = total_force[1];
 
-        if((indx%30)==0){
+            // genera velocità
+            Xvel_p = velocity(*XForce_p, *Xvel_p, Xvel_p);
+            Yvel_p = velocity(*YForce_p, *Yvel_p, Yvel_p);
+            // printf("controllo valori: yf:%.2f, yVel:%.2f\n", *YForce_p, *Yvel_p);
+            fflush(stdout);
+
+            // genera posizione
+            Xpos_p = position(*Xvel_p, *Xpos_p, Xpos_p);
+            Ypos_p = position(*Yvel_p, *Ypos_p, Ypos_p);
+
+            drone_position[0] = Xpos;
+            drone_position[1] = Ypos;
+        }
+
+
+        // -------------------- DEBUG PRINT -------------------------------------------------------- //
+        if ((speed_index % FFAST) == 0)
+        {
             printf("FORCE from ptr %f, %f\n", *XForce_p, *YForce_p); // controllo valori lettura
             fflush(stdout);
         }
 
-        // genera velocità
-        Xvel_p = velocity(*XForce_p, *Xvel_p, Xvel_p);
-        Yvel_p = velocity(*YForce_p, *Yvel_p, Yvel_p);
-        // printf("controllo valori: yf:%.2f, yVel:%.2f\n", *YForce_p, *Yvel_p);
-        fflush(stdout);
-
-        if((indx%30)==0){
+        if ((speed_index % FFAST) == 0)
+        {
             printf("VELOC from ptr %f, %f\n", *Xvel_p, *Yvel_p); // controllo valori lettura
             fflush(stdout);
         }
 
-        // genera posizione
-        Xpos_p = position(*Xvel_p, *Xpos_p, Xpos_p);
-        Ypos_p = position(*Yvel_p, *Ypos_p, Ypos_p);
-
-        drone_position[0] = Xpos;
-        drone_position[1] = Ypos;
-
-        if((indx%30)==0){
+        if ((speed_index % FFAST) == 0)
+        {
             printf("DRONE position %f, %f\n", *Xpos_p, *Ypos_p); // controllo valori lettura
             fflush(stdout);
         }
 
+        // -------------------- DEBUG PRINT -------------------------------------------------------- //
 
         if ((drone_position[0] != drone_position_old[0] || drone_position[1] != drone_position_old[1]))
         {
@@ -207,20 +224,26 @@ int main(int argc, char *argv[])
                 writeLog("==> ERROR ==> drone: write dd_s[1] %m ");
             }
 
-            //printf("%f, %f\n", drone_position[0], drone_position[1]);
+            // printf("%f, %f\n", drone_position[0], drone_position[1]);
             fflush(stdout);
-            
-            
-            if(isinf(drone_position[0]) || isinf(drone_position[1])){
+
+            if (isinf(drone_position[0]) || isinf(drone_position[1]))
+            {
                 writeLog("drone: %f, %f, %f, %f, %f, %f", drone_position[0], drone_position[1], Xvel, Yvel, XForce, YForce);
-            }else if((indx%300)==0){
+            }
+            else if ((speed_index % SLOW) == 0)
+            {
                 writeLog("drone: %f, %f", drone_position[0], drone_position[1]);
             }
 
             drone_position_old[0] = drone_position[0];
             drone_position_old[1] = drone_position[1];
         }
-        indx++;
+
+        // increment the speed index to simulate the drone
+        speed_index++;
+
+        //printf("speed_index: %d\n", speed_index);
     }
 
     // close the read file descriptor for fdd_s
@@ -276,7 +299,6 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context)
         writeLog("DRONE, pid: %d, received signal from wd pid: %d ", getpid(), info->si_pid);
     }
 }
-
 
 // le due seguenti funzioni eseguono un integrazione numerica approssimata forza(accelerazione)->velocità->posizione
 double *velocity(double Force, double initial_velocity, double *new_vel)

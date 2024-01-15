@@ -276,8 +276,8 @@ int main(int argc, char *argv[])
         FD_SET(fdi_s[0], &read_fd);
 
         // time interval for select
-        time_sel.tv_sec = 1;
-        time_sel.tv_usec = 0;
+        time_sel.tv_sec = 0;
+        time_sel.tv_usec = 3000;
 
         // select for check the value
         if ((retVal_sel = select(max_fd + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
