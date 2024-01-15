@@ -20,6 +20,9 @@
 #define MAX_OBST_ARR_SIZE 10
 #define MAX_TARG_ARR_SIZE 10
 
+#define K_OBS 1
+#define K_TRG 1
+
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
 {
@@ -306,8 +309,8 @@ int main(int argc, char *argv[])
                         }
 
                         // moltiply the position for the windows size
-                        int_dronePosition[0] = (int)(dronePosition[0] * spawn_Col);
-                        int_dronePosition[1] = (int)(dronePosition[1] * spawn_Row);
+                        int_dronePosition[0] = (int)(dronePosition[0]);
+                        int_dronePosition[1] = (int)(dronePosition[1]);
 
                         new_position = 1;
                     }
@@ -385,8 +388,8 @@ int main(int argc, char *argv[])
 
 
             // compute the x and y force
-            obstForce[0] = obstForce[0] + ((k * inputForce[0]) / (distance[0]));
-            obstForce[1] = obstForce[1] + ((k * inputForce[1]) / (distance[1]));
+            obstForce[0] = obstForce[0] + (((k * inputForce[0]) + K_OBS) / (distance[0]));
+            obstForce[1] = obstForce[1] + (((k * inputForce[1]) + K_OBS) / (distance[1]));
 
             //printf("obst force: %f, %f ---- k: %.1f , %d, %d\n", ((k * inputForce[0]) / (distance[0])), ((k * inputForce[1]) / (distance[1])), k, distance[0], distance[1]);
         }
@@ -398,9 +401,18 @@ int main(int argc, char *argv[])
             distance[0] = int_dronePosition[0] - int_set_of_target[i][0];
             distance[1] = int_dronePosition[1] - int_set_of_target[i][1];
 
+            // null distance exeption
+            if(distance[0] == 0){
+                distance[0] = 1;
+            }else if(distance[1] == 0){
+                distance[1] = 1;
+            }else{
+                // do nothing
+            }
+
             // compute the x and y force
-            targetForce[0] = targetForce[0] + ((inputForce[0]) / (distance[0]));
-            targetForce[1] = targetForce[1] + ((inputForce[1]) / (distance[1]));
+            targetForce[0] = targetForce[0] + ((inputForce[0] + K_TRG)/ (distance[0]));
+            targetForce[1] = targetForce[1] + ((inputForce[1] + K_TRG)/ (distance[1]));
 
             //printf("obst force: %f, %f ---- %d, %d\n", ((inputForce[0]) / (distance[0])), ((inputForce[1]) / (distance[1])), distance[0], distance[1]);
         }
@@ -413,15 +425,23 @@ int main(int argc, char *argv[])
         // the X char terminate the string -> the drone can read the string
 
         // write force to drone
-        if(!(isnan(totalForce[0]) || isnan(totalForce[1]))){
-            if (write(fds_d[1], totalForce, sizeof(double) * 2) == -1)
-            {
-                perror("server: erite fds_d[1]");
-                writeLog("==> ERROR ==> server: write fds_d[1], %m ");
-            }
+        // check for numeric error in total force X
+        if((isnan(totalForce[0]) || isinf(totalForce[1]))){
+            totalForce[0] = 0.0;
+        }
+
+        // check for numeric error in total force Y
+        if((isnan(totalForce[1]) || isinf(totalForce[1]))){
+            totalForce[1] = 0.0;
         }
         
+        if (write(fds_d[1], totalForce, sizeof(double) * 2) == -1)
+        {
+            perror("server: erite fds_d[1]");
+            writeLog("==> ERROR ==> server: write fds_d[1], %m ");
+        }
         
+        /*
         if (new_obstacles == 1){
             for (i = 0; i < 3; i++)
             {
@@ -435,12 +455,12 @@ int main(int argc, char *argv[])
                 printf("%d, %d \n", int_set_of_target[i][0], int_set_of_target[i][1]);
                 fflush(stdout);
             }
-        }
-        printf("drone position: %d, %d\n", int_dronePosition[0], int_dronePosition[1]);
-        //printf("total force: %f, %f\n", totalForce[0], totalForce[1]);
-        //printf("input force: %f, %f\n", inputForce[0], inputForce[1]);
-        //printf("obst force: %f, %f\n", obstForce[0], obstForce[1]);
-        //printf("target force: %f, %f\n", targetForce[0], targetForce[1]);
+        }*/
+        //printf("drone position: %d, %d\n", int_dronePosition[0], int_dronePosition[1]);
+        printf("\n\n\n\n\n\n\n\n\ntotal force:    %f, %f\n", totalForce[0], totalForce[1]);
+        printf("input force:    %f, %f\n", inputForce[0], inputForce[1]);
+        printf("obst force:     %f, %f\n", obstForce[0], obstForce[1]);
+        printf("target force:   %f, %f\n", targetForce[0], targetForce[1]);
         
         /*
         if(new_obstacles == 1 || new_position == 1){

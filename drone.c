@@ -13,6 +13,7 @@
 #include <stdarg.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <math.h>
 #include "arplib.h"
 
 #define INP_NUM 8
@@ -168,7 +169,7 @@ int main(int argc, char *argv[])
         XForce = total_force[0];
         YForce = total_force[1];
 
-        if((indx%100)==0){
+        if((indx%30)==0){
             printf("FORCE from ptr %f, %f\n", *XForce_p, *YForce_p); // controllo valori lettura
             fflush(stdout);
         }
@@ -179,7 +180,7 @@ int main(int argc, char *argv[])
         // printf("controllo valori: yf:%.2f, yVel:%.2f\n", *YForce_p, *Yvel_p);
         fflush(stdout);
 
-        if((indx%100)==0){
+        if((indx%30)==0){
             printf("VELOC from ptr %f, %f\n", *Xvel_p, *Yvel_p); // controllo valori lettura
             fflush(stdout);
         }
@@ -191,7 +192,7 @@ int main(int argc, char *argv[])
         drone_position[0] = Xpos;
         drone_position[1] = Ypos;
 
-        if((indx%100)==0){
+        if((indx%30)==0){
             printf("DRONE position %f, %f\n", *Xpos_p, *Ypos_p); // controllo valori lettura
             fflush(stdout);
         }
@@ -208,12 +209,17 @@ int main(int argc, char *argv[])
 
             //printf("%f, %f\n", drone_position[0], drone_position[1]);
             fflush(stdout);
-            writeLog("drone: %f, %f", drone_position[0], drone_position[1]);
+            
+            
+            if(isinf(drone_position[0]) || isinf(drone_position[1])){
+                writeLog("drone: %f, %f, %f, %f, %f, %f", drone_position[0], drone_position[1], Xvel, Yvel, XForce, YForce);
+            }else if((indx%300)==0){
+                writeLog("drone: %f, %f", drone_position[0], drone_position[1]);
+            }
+
             drone_position_old[0] = drone_position[0];
             drone_position_old[1] = drone_position[1];
         }
-
-        usleep(1000);
         indx++;
     }
 
