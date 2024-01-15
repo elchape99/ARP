@@ -61,8 +61,9 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context)
 
 WINDOW *create_new_window(int row, int col, int ystart, int xstart); // creazione delle finestre
 
-
 bool spawn_autorization(int obst_x, int obst_y, int drone_x, int drone_y);
+
+int signum(int x);
 
 int main(int argc, char *argv[])
 {
@@ -187,18 +188,19 @@ int main(int argc, char *argv[])
     // print window for the map
     WINDOW *spawn_window;
     // parte legata ad ncurses per il server
-    int Srow, Scol;     // righe e colonne massime dello schermo
+    int Srow = 50, Scol = 80;     // righe e colonne massime dello schermo
     int rowSH, colSH;
     // initialization row
+    /*
     initscr();
     raw();
     cbreak();
     noecho();
     keypad(stdscr, TRUE);
 
-    box(stdscr, 0, 0);
+    box(stdscr, 0, 0);*/
 
-    getmaxyx(stdscr, Srow, Scol);
+    //getmaxyx(stdscr, Srow, Scol);
     // window for printing the drone, obst, targh
     int spawn_Col = Scol - 2;
     int spawn_Row = Srow - 2;
@@ -206,8 +208,8 @@ int main(int argc, char *argv[])
     rowSH = spawn_Row / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
     colSH = spawn_Col / 2;
 
-    spawn_window = newwin(spawn_Row, spawn_Col, 2, 2);
-    wrefresh(spawn_window);
+    //spawn_window = newwin(spawn_Row, spawn_Col, 2, 2);
+    //wrefresh(spawn_window);
 
     // stampare roba in ordine
     int cur_x, cur_y;
@@ -217,10 +219,18 @@ int main(int argc, char *argv[])
     // contain the position of obstacle and target
     double set_of_obstacle[MAX_OBST_ARR_SIZE][2];
     double set_of_target[MAX_TARG_ARR_SIZE][2];
+
+    int int_set_of_obstacle[MAX_OBST_ARR_SIZE][2];
+    int int_set_of_target[MAX_TARG_ARR_SIZE][2];
+
     // contain the information about the position of drone, come from the pipe
     double dronePosition[2];
+
+    int int_dronePosition[2];
+
     // input force, cames from the piefrom input
     double inputForce[2];
+
     // compute in while cycle
     double obstForce[2] = {0};
     double targetForce[2] = {0};
@@ -235,8 +245,8 @@ int main(int argc, char *argv[])
     // moltiply the target for the windows size
     for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
     {
-        set_of_target[i][0] = set_of_target[i][0] * spawn_Col;
-        set_of_target[i][1] = set_of_target[i][0] * spawn_Row;
+        int_set_of_target[i][0] = (int)(set_of_target[i][0] * spawn_Col);
+        int_set_of_target[i][1] = (int)(set_of_target[i][0] * spawn_Row);
     }
 
     // definizione variaili della select
@@ -278,11 +288,8 @@ int main(int argc, char *argv[])
         }
         else if (retVal_sel == 0)
         {
-            /*printf("no new data\n"); // pipe vuota
-            getyx(stdscr, cur_y, cur_x);
-            move(cur_y, 0);
-            refresh();
-            fflush(stdout);*/
+            // timeout expired
+            // printf("timeout expired\n");
         }
         else
         {
@@ -301,11 +308,11 @@ int main(int argc, char *argv[])
                             perror("server: read fdd_s[0]");
                             writeLog("==> ERROR ==> server:read fdd_s[0], %m ");
                         }
-                        /*printf("drone position %f, %f\n", dronePosition[0], dronePosition[1]);
-                        getyx(stdscr, cur_y, cur_x);
-                        move(cur_y, 0);
-                        refresh();
-                        fflush(stdout);*/
+
+                        // moltiply the position for the windows size
+                        int_dronePosition[0] = (int)(dronePosition[0] * spawn_Col);
+                        int_dronePosition[1] = (int)(dronePosition[1] * spawn_Row);
+
                         new_position = 1;
                     }
                     else if (fd_array[i] == fdo_s[0]) // <<<< obstacle - server >>>>
@@ -319,8 +326,8 @@ int main(int argc, char *argv[])
                         // note: mettere questo fuori dall'if della select mi porta a ri moltiplicare per ogni iterazione del ciclo wile
                         // così in teoria una volta letto dalla pipe set_of_obstacle viene sovrascritto e quindi non ci sono problemi
                         for(i = 0; i < MAX_OBST_ARR_SIZE; i++){
-                            set_of_obstacle[i][0] = set_of_obstacle[i][0] * spawn_Col;
-                            set_of_obstacle[i][1] = set_of_obstacle[i][1] * spawn_Row;
+                            int_set_of_obstacle[i][0] = (int)(set_of_obstacle[i][0] * spawn_Col);
+                            int_set_of_obstacle[i][1] = (int)(set_of_obstacle[i][1] * spawn_Row);
                         }
 
                         new_obstacles = 1;
@@ -334,11 +341,6 @@ int main(int argc, char *argv[])
                             perror("server: read fdi_s[0]");
                             writeLog("==> ERROR ==> server:read fdi_s[0], %m ");
                         }
-                        /*printf("input force %f, %f\n", inputForce[0], inputForce[1]);
-                        getyx(stdscr, cur_y, cur_x);
-                        move(cur_y, 0);
-                        refresh();
-                        fflush(stdout);*/
                     }
                     else
                     {
@@ -350,10 +352,191 @@ int main(int argc, char *argv[])
     
 
         //------------------ furoi dalla select -----------------------------------
+        // compute the obstacle and target force
+        // useful variables
+        int distance[2] = {0};
+        double k = 0.0;
 
-        // obtain obstacle position
+        // each cycle i have to reset the obstacle force
+        obstForce[0] = 0.0;
+        obstForce[1] = 0.0;
 
+        for(i = 0; i<MAX_OBST_ARR_SIZE; i++){
+            // calculating the distance between drone and obstacle
+            distance[0] = int_dronePosition[0] - int_set_of_obstacle[i][0];
+            distance[1] = int_dronePosition[1] - int_set_of_obstacle[i][1];
+
+            // check if drone is too close to obstacle
+            if(distance[0] < 2 && distance[1] < 2){
+                // if true, the obstacle is too close to drone, so the repulsive force is 0
+                k = 0.0;
+            }else{
+                k = 0.2;
+            }
+
+            // compute the x and y force
+            obstForce[0] = obstForce[0] + ((k * inputForce[0]) / (signum(distance[0]) * pow(distance[0], 2.0)));
+            obstForce[1] = obstForce[1] + ((k * inputForce[1]) / (signum(distance[1]) * pow(distance[1], 2.0)));
+        }
+
+        // each cycle i have to reset the target force
+        targetForce[0] = 0.0;
+        targetForce[1] = 0.0;
+
+        for(i = 0; i<MAX_TARG_ARR_SIZE; i++){
+            // calculating the distance between drone and target
+            distance[0] = int_dronePosition[0] - int_set_of_target[i][0];
+            distance[1] = int_dronePosition[1] - int_set_of_target[i][1];
+
+            // check if drone is too close to target maybe??
+
+
+            // compute the x and y force
+            targetForce[0] = targetForce[0] + ((inputForce[0]) / (signum(-distance[0]) * pow(distance[0], 2.0)));
+            targetForce[1] = targetForce[1] + ((inputForce[1]) / (signum(-distance[1]) * pow(distance[1], 2.0)));
+        }
+        
+        totalForce[0] = inputForce[0] + obstForce[0] + targetForce[0];
+        totalForce[1] = inputForce[1] + obstForce[1] + targetForce[1];
+
+
+        // creare la stringa da inviare al drone nella forma 1|totalForce[0]|1|totalForce[1]X
+        // the X char terminate the string -> the drone can read the string
+
+        // write force to drone
         /*
+        if (write(fds_d[1], totalForce, sizeof(double) * 2) == -1)
+        {
+            perror("server: erite fds_d[1]");
+            writeLog("==> ERROR ==> server: write fds_d[1], %m ");
+        }
+        
+        */
+       if (new_obstacles == 1){
+            for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+            {
+                printf("set of obst  ");
+                printf("%d, %d \n", int_set_of_obstacle[i][0], int_set_of_obstacle[i][1]);
+                fflush(stdout);
+            }
+            for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+            {
+                printf("set of obst float  ");
+                printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
+                fflush(stdout);
+            }
+       }
+        //printf("total force: %f, %f\n", totalForce[0], totalForce[1]);
+        //printf("input force: %f, %f\n", inputForce[0], inputForce[1]);
+        //printf("obst force: %f, %f\n", obstForce[0], obstForce[1]);
+        //printf("target force: %f, %f\n", targetForce[0], targetForce[1]);
+        
+        /*
+        if(new_obstacles == 1 || new_position == 1){
+            
+            // clear the map window
+            wclear(spawn_window);
+
+            // print the drone icon
+            mvwaddch(spawn_window, rowSH - (int)dronePosition[1], colSH + (int)dronePosition[0], DRONE_ICON);
+
+
+            // print the obstacle
+            for (i = 0; i < MAX_OBST_ARR_SIZE; i++) {
+                if ((int)set_of_obstacle[i][0] != -1 && (int)set_of_obstacle[i][1] != -1) {
+                    mvwaddch(spawn_window, (int)set_of_obstacle[i][1], (int)set_of_obstacle[i][0], 'O');
+                }   
+            }
+
+            
+            // print the target
+            for(i=0; i < MAX_TARG_ARR_SIZE; i++){
+                if((int)set_of_target[i][0] != -1 && (int)set_of_target[i][1] != -1){
+                    mvwaddch(spawn_window, (int)set_of_target[i][1], (int)set_of_target[i][0], 'T');
+                }
+            }
+
+            refresh();
+            
+            
+            
+        } */
+        
+        /*
+            // Print some value for control
+            for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
+            {
+                printf("set of target");
+                printf("%f, %f \n", set_of_target[i][0], set_of_target[i][1]);
+                fflush(stdout);
+            }
+            for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
+            {
+                printf("set of obstacle");
+                printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
+                fflush(stdout);
+            }
+        */
+
+        // gestione del resize della finestra
+        getmaxyx(stdscr, Srow, Scol);
+
+        spawn_Col = Scol - 2;
+        spawn_Row = Srow - 2;
+
+        rowSH = spawn_Row / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
+        colSH = spawn_Col / 2;
+        
+    } // while(1) end --> if all the target are reached, we exit from this cycle
+
+
+    return 0;
+}
+
+//// ---- Functions sections -----------------------------------------------------------
+WINDOW *create_new_window(int row, int col, int ystart, int xstart){
+    WINDOW *local_window = newwin(row, col, ystart, xstart);
+    box(local_window, 0, 0);
+
+    wrefresh(local_window);
+    return local_window;
+}
+
+bool spawn_autorization(int obst_x, int obst_y, int drone_x, int drone_y)
+{
+    // return true whe I can spawn the obstacle
+    double trsh = 2.0;
+    // compute distance between obstacle and drone
+    double mod = sqrt((obst_x - drone_x) ^ 2 + (obst_y - drone_y) ^ 2);
+    // if distance is less than a threshold, I return false, so the obstacle is too near to drone
+    if (mod < trsh)
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+    // the obstacle is enough far, so spawn it
+    return true;
+}
+
+int signum(int x){
+    if(x > 0){
+        return 1;
+    }else if(x < 0){
+        return -1;
+    }else{
+        return 1;
+    }
+}
+
+
+
+/*
+// obtain obstacle position
+
+        
         for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
         {
             // if true spawn the obstacle
@@ -368,15 +551,15 @@ int main(int argc, char *argv[])
                 set_of_obstacle[i][0] = -1; // negative position are not printed by ncurses
                 set_of_obstacle[i][1] = -1;
             }
-        }*/
+        }
 
-        /*
+        
         for(i = 0; i < MAX_OBST_ARR_SIZE; i++){
             printf("obstacle %f, %f\n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
             fflush(stdout); 
         }
         sleep(1); ////////////////// DELETE THIS LINE
-        */
+        
 
         double k;
         // Compute obstacle Force
@@ -413,109 +596,10 @@ int main(int argc, char *argv[])
         }
 
         // Compute total Force x:
-        totalForce[0] = inputForce[0] - obstForce[0] + targetForce[0];
+        totalForce[0] = inputForce[0] + obstForce[0] + targetForce[0];
         // Compute total force y:
-        totalForce[1] = inputForce[1] - obstForce[1] + targetForce[1];
+        totalForce[1] = inputForce[1] + obstForce[1] + targetForce[1];
 
-        // creare la stringa da inviare al drone nella forma 1|totalForce[0]|1|totalForce[1]X
-        // the X char terminate the string -> the drone can read the string
-
-        // write force to drone
-        if (write(fds_d[1], totalForce, sizeof(double) * 2) == -1)
-        {
-            perror("server: erite fds_d[1]");
-            writeLog("==> ERROR ==> server: write fds_d[1], %m ");
-        }
-        
-        
-        if(new_obstacles == 1 || new_position == 1){
-            
-            // clear the map window
-            wclear(spawn_window);
-
-            // print the drone icon
-            mvwaddch(spawn_window, rowSH - (int)dronePosition[1], colSH + (int)dronePosition[0], DRONE_ICON);
-
-
-            // print the obstacle
-            for (i = 0; i < MAX_OBST_ARR_SIZE; i++) {
-                if ((int)set_of_obstacle[i][0] != -1 && (int)set_of_obstacle[i][1] != -1) {
-                    mvwaddch(spawn_window, (int)set_of_obstacle[i][1], (int)set_of_obstacle[i][0], 'O');
-                }   
-            }
-
-            
-            // print the target
-            for(i=0; i < MAX_TARG_ARR_SIZE; i++){
-                if((int)set_of_target[i][0] != -1 && (int)set_of_target[i][1] != -1){
-                    mvwaddch(spawn_window, (int)set_of_target[i][1], (int)set_of_target[i][0], 'T');
-                }
-            }
-
-            refresh();
-            
-            
-            
-        } 
-        
-        /*
-            // Print some value for control
-            for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
-            {
-                printf("set of target");
-                printf("%f, %f \n", set_of_target[i][0], set_of_target[i][1]);
-                fflush(stdout);
-            }
-            for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
-            {
-                printf("set of obstacle");
-                printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
-                fflush(stdout);
-            }
-        */
-
-        // gestione del resize della finestra
-        getmaxyx(stdscr, Srow, Scol);
-
-        spawn_Col = Scol - 2;
-        spawn_Row = Srow - 2;
-
-        rowSH = spawn_Row / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
-        colSH = spawn_Col / 2;
-
-        
-    } // while(1) end --> if all the target are reached, we exit from this cycle
-
-
-    return 0;
-}
-
-//// ---- Functions sections -----------------------------------------------------------
-WINDOW *create_new_window(int row, int col, int ystart, int xstart){
-    WINDOW *local_window = newwin(row, col, ystart, xstart);
-    box(local_window, 0, 0);
-
-    wrefresh(local_window);
-    return local_window;
-}
-
-bool spawn_autorization(int obst_x, int obst_y, int drone_x, int drone_y)
-{
-    // return true whe I can spawn the obstacle
-    double trsh = 2.0;
-    // compute distance between obstacle and drone
-    double mod = sqrt((obst_x - drone_x) ^ 2 + (obst_y - drone_y) ^ 2);
-    // if distance is less than a threshold, I return false, so the obstacle is too near to drone
-    if (mod < trsh)
-    {
-        return false;
-    }
-    else
-    {
-        return true;
-    }
-    // the obstacle is enough far, so spawn it
-    return true;
-}
+*/
 
     
