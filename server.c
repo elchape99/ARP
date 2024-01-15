@@ -226,15 +226,21 @@ int main(int argc, char *argv[])
     // contain the information about the position of drone, come from the pipe
     double dronePosition[2];
 
+    dronePosition[0] = 0.0;
+    dronePosition[1] = 0.0;
+
     int int_dronePosition[2];
 
+    int_dronePosition[0] = 0;
+    int_dronePosition[1] = 0;
+
     // input force, cames from the piefrom input
-    double inputForce[2];
+    double inputForce[2] = {0.0};
 
     // compute in while cycle
-    double obstForce[2] = {0};
-    double targetForce[2] = {0};
-    double totalForce[2] = {0};
+    double obstForce[2] = {0.0};
+    double targetForce[2] = {0.0};
+    double totalForce[2] = {0.0};
 
     // read the set of target comes from target process
     if (read(fdt_s[0], set_of_target, sizeof(double) * MAX_TARG_ARR_SIZE * 2) == -1)
@@ -263,6 +269,10 @@ int main(int argc, char *argv[])
 
     // variabili di controllo per evitare di ristampare la mappa al ritmo del while
     int new_position, new_obstacles;
+
+    // variabili per il calcolo delle forze
+    int distance[2];
+    double k;
 
     while (1)
     {
@@ -325,6 +335,7 @@ int main(int argc, char *argv[])
                         }
                         // note: mettere questo fuori dall'if della select mi porta a ri moltiplicare per ogni iterazione del ciclo wile
                         // così in teoria una volta letto dalla pipe set_of_obstacle viene sovrascritto e quindi non ci sono problemi
+
                         for(i = 0; i < MAX_OBST_ARR_SIZE; i++){
                             int_set_of_obstacle[i][0] = (int)(set_of_obstacle[i][0] * spawn_Col);
                             int_set_of_obstacle[i][1] = (int)(set_of_obstacle[i][1] * spawn_Row);
@@ -354,12 +365,15 @@ int main(int argc, char *argv[])
         //------------------ furoi dalla select -----------------------------------
         // compute the obstacle and target force
         // useful variables
-        int distance[2] = {0};
-        double k = 0.0;
+        distance[0] = 0;
+        distance[1] = 0;
+        k = 0.2;
 
         // each cycle i have to reset the obstacle force
         obstForce[0] = 0.0;
         obstForce[1] = 0.0;
+
+        printf("calcolo forze ostacoli\n");
 
         for(i = 0; i<MAX_OBST_ARR_SIZE; i++){
             // calculating the distance between drone and obstacle
@@ -367,21 +381,32 @@ int main(int argc, char *argv[])
             distance[1] = int_dronePosition[1] - int_set_of_obstacle[i][1];
 
             // check if drone is too close to obstacle
-            if(distance[0] < 2 && distance[1] < 2){
+            if(abs(distance[0]) < 2 && abs(distance[1]) < 2){
                 // if true, the obstacle is too close to drone, so the repulsive force is 0
                 k = 0.0;
+            }
+            // null distance exeption
+            if(distance[0] == 0){
+                distance[0] = 1;
+            }else if(distance[1] == 0){
+                distance[1] = 1;
             }else{
-                k = 0.2;
+                // do nothing
             }
 
+
             // compute the x and y force
-            obstForce[0] = obstForce[0] + ((k * inputForce[0]) / (signum(distance[0]) * pow(distance[0], 2.0)));
-            obstForce[1] = obstForce[1] + ((k * inputForce[1]) / (signum(distance[1]) * pow(distance[1], 2.0)));
+            obstForce[0] = obstForce[0] + ((k * inputForce[0]) / (distance[0]));
+            obstForce[1] = obstForce[1] + ((k * inputForce[1]) / (distance[1]));
+
+            printf("obst force: %f, %f ---- k: %.1f , %d, %d\n", ((k * inputForce[0]) / (distance[0])), ((k * inputForce[1]) / (distance[1])), k, distance[0], distance[1]);
         }
 
         // each cycle i have to reset the target force
         targetForce[0] = 0.0;
         targetForce[1] = 0.0;
+
+        printf("calcolo forze target\n");
 
         for(i = 0; i<MAX_TARG_ARR_SIZE; i++){
             // calculating the distance between drone and target
@@ -392,8 +417,10 @@ int main(int argc, char *argv[])
 
 
             // compute the x and y force
-            targetForce[0] = targetForce[0] + ((inputForce[0]) / (signum(-distance[0]) * pow(distance[0], 2.0)));
-            targetForce[1] = targetForce[1] + ((inputForce[1]) / (signum(-distance[1]) * pow(distance[1], 2.0)));
+            targetForce[0] = targetForce[0] + ((inputForce[0]) / (distance[0]));
+            targetForce[1] = targetForce[1] + ((inputForce[1]) / (distance[1]));
+
+            printf("obst force: %f, %f ---- %d, %d\n", ((inputForce[0]) / (distance[0])), ((inputForce[1]) / (distance[1])), distance[0], distance[1]);
         }
         
         totalForce[0] = inputForce[0] + obstForce[0] + targetForce[0];
@@ -411,7 +438,7 @@ int main(int argc, char *argv[])
             writeLog("==> ERROR ==> server: write fds_d[1], %m ");
         }
         
-        */
+        /*
        if (new_obstacles == 1){
             for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
             {
@@ -425,7 +452,7 @@ int main(int argc, char *argv[])
                 printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
                 fflush(stdout);
             }
-       }
+       }*/
         //printf("total force: %f, %f\n", totalForce[0], totalForce[1]);
         //printf("input force: %f, %f\n", inputForce[0], inputForce[1]);
         //printf("obst force: %f, %f\n", obstForce[0], obstForce[1]);
@@ -479,7 +506,7 @@ int main(int argc, char *argv[])
         */
 
         // gestione del resize della finestra
-        getmaxyx(stdscr, Srow, Scol);
+        //getmaxyx(stdscr, Srow, Scol);
 
         spawn_Col = Scol - 2;
         spawn_Row = Srow - 2;
