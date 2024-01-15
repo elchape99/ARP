@@ -406,7 +406,7 @@ int main(int argc, char *argv[])
         targetForce[0] = 0.0;
         targetForce[1] = 0.0;
 
-        printf("calcolo forze target\n");
+        //printf("calcolo forze target\n");
 
         for(i = 0; i<MAX_TARG_ARR_SIZE; i++){
             // calculating the distance between drone and target
@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
             targetForce[0] = targetForce[0] + ((inputForce[0]) / (distance[0]));
             targetForce[1] = targetForce[1] + ((inputForce[1]) / (distance[1]));
 
-            printf("obst force: %f, %f ---- %d, %d\n", ((inputForce[0]) / (distance[0])), ((inputForce[1]) / (distance[1])), distance[0], distance[1]);
+            //printf("obst force: %f, %f ---- %d, %d\n", ((inputForce[0]) / (distance[0])), ((inputForce[1]) / (distance[1])), distance[0], distance[1]);
         }
         
         totalForce[0] = inputForce[0] + obstForce[0] + targetForce[0];
