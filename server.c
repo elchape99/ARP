@@ -219,6 +219,7 @@ int main(int argc, char *argv[])
 
     // variabili per il calcolo delle forze
     int distance[2] = {0};
+    int counter = 0;
 
     // variable for select
     int retVal_sel;
@@ -289,7 +290,7 @@ int main(int argc, char *argv[])
         new_position = 0;
         new_obstacles = 0;
 
-        ////// ---- part for the select ----------------------------------------------------------
+        ///////////////////////////// ---- part for the select ----------------------------------------------------------
         // define the set of fd
         FD_ZERO(&read_fd);
         FD_SET(fdd_s[0], &read_fd);
@@ -383,8 +384,7 @@ int main(int argc, char *argv[])
                 }
             }
         }
-
-        /////////compute all the force apply tothe drone /////////////////////////////////////////////
+        ///////////// --- compute all the force apply to the drone /////////////////////////////////////////////
         // useful variables
         // initilize every loop the distance obj-drone to zero
         distance[0] = 0;
@@ -508,13 +508,26 @@ int main(int argc, char *argv[])
             // print the target
             for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
             {
-                if (int_set_of_target[i][0] != -1 && int_set_of_target[i][1] != -1)
+                if (int_set_of_target[i][0] != -1000 && int_set_of_target[i][1] != -1000)
                 {
-                    mvwaddch(spawn_window, rowSH - int_set_of_target[i][1], colSH + int_set_of_target[i][0], 'T');
+                    if (abs(int_dronePosition[0] - int_set_of_target[i][0]) == 1 && abs(int_dronePosition[1] - int_set_of_target[i][1]) == 1 )
+                    {
+                        // set the value to -1, aka target reached
+                        int_set_of_target[i][0] = -1000;
+                        int_set_of_target[i][1] = -1000;
+                        counter ++;
+                    }
+                    else
+                    {
+                        mvwaddch(spawn_window, rowSH - int_set_of_target[i][1], colSH + int_set_of_target[i][0], 'T');
+                    }
                 }
             }
             // refresch of the ncurses window
             wrefresh(spawn_window);
+            if(counter == MAX_TARG_ARR_SIZE){
+                // fare funzione vincita
+            }
         }
         // gestione del resize della finestra
         getmaxyx(stdscr, Srow, Scol);
@@ -579,20 +592,4 @@ bool spawn_autorization(int obst_x, int obst_y, int drone_x, int drone_y)
     }
     // the obstacle is enough far, so spawn it
     return true;
-}
-
-int signum(int x)
-{
-    if (x > 0)
-    {
-        return 1;
-    }
-    else if (x < 0)
-    {
-        return -1;
-    }
-    else
-    {
-        return 1;
-    }
 }
