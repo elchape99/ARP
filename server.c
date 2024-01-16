@@ -21,12 +21,12 @@
 #define MAX_OBST_ARR_SIZE 10
 #define MAX_TARG_ARR_SIZE 10
 
-#define OBST_RADIUS_FAR 6
-#define OBST_RADIUS_CLOSE 2
+#define OBST_RADIUS_FAR 2
+#define OBST_RADIUS_CLOSE 1
 
 // constant for the computation of the force
 #define K_CLOSE 3
-#define K_STD 0.7
+#define K_STD 0.5
 
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
@@ -386,14 +386,14 @@ int main(int argc, char *argv[])
 
         /////////compute all the force apply tothe drone /////////////////////////////////////////////
         // useful variables
+        // initilize every loop the distance obj-drone to zero
         distance[0] = 0;
         distance[1] = 0;
-
         // each cycle i have to reset the obstacle force
         obstForce[0] = 0.0;
         obstForce[1] = 0.0;
 
-        // compute the distace in x-axe and y-axe from drone and obstacle
+        /////// Compute the obstacle repulsive force
         // for now I am conidering the total force so for the first iteration the drone don't have repulsive force
         for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
         {
@@ -450,7 +450,27 @@ int main(int argc, char *argv[])
         totalForce[0] = inputForce[0] + obstForce[0];
         totalForce[1] = inputForce[1] + obstForce[1];
 
-        // write force to drone
+        /////// Compute the window edge for avoid the drone go outsde the box
+        // control that the drone is not outside the upper and lower edge of window
+        if (abs(rowSH - int_dronePosition[1]) == 0)
+        {
+            totalForce[1] = -30;
+        }
+        else if ((rowSH - int_dronePosition[1]) == spawn_Row)
+        {
+            totalForce[1] = +30;
+        }
+        // control thet the drone is inide the right and left edge of the window
+        if ((colSH + int_dronePosition[0]) == 0)
+        {
+            totalForce[0] = +60;
+        }
+        else if ((colSH + int_dronePosition[0]) == spawn_Col)
+        {
+            totalForce[0] = -60;
+        }
+
+        // write totalForce to drone
         // check for numeric error in total force X
         if (isnan(totalForce[0]) || isinf(totalForce[0]) || isnan(totalForce[1]) || isinf(totalForce[1]))
         {
