@@ -17,6 +17,7 @@
 #include "arplib.h"
 
 #define WIND_NUMBER 12
+#define LIMIT 5
 
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
@@ -488,7 +489,7 @@ int *manage_input(char input_char, char *icon_string, int *active_power, double 
         {
             active_power[pointer_index] += 1;
             
-            if (active_power[pointer_index] > 10){
+            if (active_power[pointer_index] > LIMIT){
                 active_power[pointer_index] -= 1;
             }
 

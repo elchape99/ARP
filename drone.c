@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        if ((speed_index % FAST) == 0)
+        if ((speed_index % FFAST) == 0)
         {
             // genero valori di forza sui due assi
             XForce = total_force[0];

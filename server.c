@@ -18,13 +18,15 @@
 #include "arplib.h"
 
 #define DRONE_ICON 'X'
-#define MAX_OBST_ARR_SIZE 1
+#define MAX_OBST_ARR_SIZE 10
 #define MAX_TARG_ARR_SIZE 10
-#define OBST_RADIUS_FAR 10
+
+#define OBST_RADIUS_FAR 6
 #define OBST_RADIUS_CLOSE 2
 
-#define K_OBS 0
-#define K_TRG 1
+// constant for the computation of the force
+#define K_CLOSE 3
+#define K_STD 0.7
 
 /* function for write in logfile*/
 void writeLog(const char *format, ...)
@@ -217,7 +219,6 @@ int main(int argc, char *argv[])
 
     // variabili per il calcolo delle forze
     int distance[2] = {0};
-    double k = 0.2;
 
     // variable for select
     int retVal_sel;
@@ -263,7 +264,7 @@ int main(int argc, char *argv[])
     // window for printing the drone, obst, targh
     int spawn_Col = Scol - 2;
     int spawn_Row = Srow - 2;
-    writeLog ("spawn_Col = %i, spawn_Row = %i", spawn_Col, spawn_Row);
+    writeLog("spawn_Col = %i, spawn_Row = %i", spawn_Col, spawn_Row);
 
     rowSH = spawn_Row / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
     colSH = spawn_Col / 2;
@@ -387,7 +388,6 @@ int main(int argc, char *argv[])
         // useful variables
         distance[0] = 0;
         distance[1] = 0;
-        k = 2.0;
 
         // each cycle i have to reset the obstacle force
         obstForce[0] = 0.0;
@@ -404,7 +404,6 @@ int main(int argc, char *argv[])
             // For compute the force, for avoid overflow conider as less distance from point = 2 and if the distance is > 10 don't consider force
             // Consider first the x coordinate
 
-            
             if (abs(distance[0]) > OBST_RADIUS_FAR || abs(distance[1]) > OBST_RADIUS_FAR)
             {
                 // case when the drone is too far from obstacel
@@ -414,12 +413,12 @@ int main(int argc, char *argv[])
             else if (abs(distance[0]) < OBST_RADIUS_FAR)
             {
                 // case when the drone is too near the obstacle
-                obstForce[0] = obstForce[0] + (sign(distance[0]) * (inputForce[0]));
+                obstForce[0] = obstForce[0] + (sign(distance[0]) * (K_CLOSE * abs(inputForce[0])));
             }
             else
             {
                 // other case when the drone is arriving near the obstacle
-                obstForce[0] = obstForce[0] + (sign(distance[0]) * ((k * inputForce[0]) / pow(distance[0], 2)));
+                obstForce[0] = obstForce[0] + (sign(distance[0]) * ((K_STD * abs(inputForce[0])) / pow(distance[0], 2)));
             }
 
             // consider now the y coordinate
@@ -430,22 +429,22 @@ int main(int argc, char *argv[])
                 obstForce[0] = obstForce[0] + 0; // don't add any force
                 obstForce[1] = obstForce[1] + 0; // don't add any force
             }
-            else if (abs(distance[1]) < OBST_RADIUS_FAR)
+            else if (abs(distance[1]) < OBST_RADIUS_CLOSE)
             {
                 // rone to near to the obstacle,risk an overflow, so limit the distance
-                obstForce[1] = obstForce[1] + (sign(distance[1]) * (inputForce[1]));
+                obstForce[1] = obstForce[1] + (sign(distance[1]) * (K_CLOSE * abs(inputForce[1])));
             }
             else
             {
                 // all the other case
-                obstForce[1] = obstForce[1] + (sign(distance[1]) * ((k * inputForce[1]) / pow((distance[1]), 2)));
+                obstForce[1] = obstForce[1] + (sign(distance[1]) * ((K_STD * abs(inputForce[1])) / pow((distance[1]), 2)));
             }
-            
 
-
-            writeLog("server: DIST\tx = %d, y = %d, ---  DRONE (%d, %d), OBST (%d, %d)", distance[0], distance[1], int_dronePosition[0], int_dronePosition[1], int_set_of_obstacle[i][0], int_set_of_obstacle[i][1]);
+            writeLog("server: DIST\tx = %d, y = %d, ---  DRONE (%d, %d), OBST (%d, %d), F.INPUT (%lf, %lf), F.OBST (%lf, %lf), F.TOT (%lf,%lf)", distance[0], distance[1], int_dronePosition[0], int_dronePosition[1], int_set_of_obstacle[i][0], int_set_of_obstacle[i][1], inputForce[0], inputForce[1], obstForce[0], obstForce[1], totalForce[0], totalForce[1]);
             // writeLog("server obstForce-iesima  \t x = %lf, y = %lf", obstForce[0], obstForce[1]);
         }
+
+        //
 
         // compute the total force as sum of all the force on the arena
         totalForce[0] = inputForce[0] + obstForce[0];
@@ -507,29 +506,28 @@ int main(int argc, char *argv[])
         colSH = spawn_Col / 2;
 
     } // while(1) end --> if all the target are reached, we exit from this cycle
-    /*
+
     // close all the open file desciptor
-    if (close (fds_d[1] == -1))
+    if (close(fds_d[1] == -1))
     {
         perror("server: close fds_d[1]");
         writeLog("==> ERROR ==> server: close fds_d[1] %m");
     }
-    if (close (fdi_s[0] == -1))
+    if (close(fdi_s[0] == -1))
     {
         perror("server: close fdi_s[0]");
         writeLog("==> ERROR ==> server: close fdi_s[0] %m");
     }
-    if (close (fdo_s[0] == -1))
+    if (close(fdo_s[0] == -1))
     {
         perror("server: close fdo_s[0]");
         writeLog("==> ERROR ==> server: close fdo_s[0] %m");
     }
-    if (close (fdd_s[0] == -1))
+    if (close(fdd_s[0] == -1))
     {
         perror("server: close fdd_s[0]");
         writeLog("==> ERROR ==> server: close fdd_s[0] %m");
     }
-    */
 
     return 0;
 }

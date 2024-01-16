@@ -15,7 +15,7 @@
 #include <sys/ipc.h>
 #include "arplib.h"
 
-#define MAX_OBST_ARR_SIZE 1
+#define MAX_OBST_ARR_SIZE 10
 // Seconds of upgrade of the obstacles
 #define N 1000
 
