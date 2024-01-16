@@ -83,14 +83,12 @@ int main(int argc, char *argv[])
         writeLog("==> ERROR ==> target: close fdt_s[0], %m ");
     }
 
-    double set_of_target [MAX_TARG_ARR_SIZE][2];
-
-    for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
+    double set_of_target[MAX_TARG_ARR_SIZE][2];
+    for (int i = 0; i < MAX_TARG_ARR_SIZE; i++)
     {
-        set_of_target[i][0] = (double)rand() / RAND_MAX;
-        set_of_target[i][1] = (double)rand() / RAND_MAX;
+        set_of_target[i][0] = ((double)rand() / RAND_MAX) - 0.5;
+        set_of_target[i][1] = ((double)rand() / RAND_MAX) - 0.5;
     }
-    
 
     if (write(fdt_s[1], set_of_target, sizeof(double) * MAX_TARG_ARR_SIZE * 2) == -1)
     {

@@ -165,11 +165,11 @@ int main(int argc, char *argv[])
             }
             else
             {
-                if ((speed_index % SSLOW) == 0)
-                {
-                    printf("--->controllo lettura: %d, ( %f, %f )\n", retVal_read, total_force[0], total_force[1]); // controllo valori lettura
-                    fflush(stdout);
-                }
+                // if ((speed_index % SSLOW) == 0)
+                //{
+                printf("date read pipe, total force\t%f %f \n", total_force[0], total_force[1]); // controllo valori lettura
+                fflush(stdout);
+                //}
             }
         }
 
@@ -193,24 +193,23 @@ int main(int argc, char *argv[])
             drone_position[1] = Ypos;
         }
 
-
         // -------------------- DEBUG PRINT -------------------------------------------------------- //
         if ((speed_index % FFAST) == 0)
         {
-            printf("FORCE from ptr %f, %f\n", *XForce_p, *YForce_p); // controllo valori lettura
-            fflush(stdout);
+            // printf("FORCE from ptr \t%f, %f\n", *XForce_p, *YForce_p); // controllo valori lettura
+            // fflush(stdout);
         }
 
         if ((speed_index % FFAST) == 0)
         {
-            printf("VELOC from ptr %f, %f\n", *Xvel_p, *Yvel_p); // controllo valori lettura
-            fflush(stdout);
+            // printf("VELOC from ptr \t%f, %f\n", *Xvel_p, *Yvel_p); // controllo valori lettura
+            // fflush(stdout);
         }
 
         if ((speed_index % FFAST) == 0)
         {
-            printf("DRONE position %f, %f\n", *Xpos_p, *Ypos_p); // controllo valori lettura
-            fflush(stdout);
+            // printf("DRONE position \t%f, %f\n", *Xpos_p, *Ypos_p); // controllo valori lettura
+            // fflush(stdout);
         }
 
         // -------------------- DEBUG PRINT -------------------------------------------------------- //
@@ -223,9 +222,12 @@ int main(int argc, char *argv[])
                 perror("drone: write fdd_s[1] ");
                 writeLog("==> ERROR ==> drone: write dd_s[1] %m ");
             }
+            else
+            {
+                writeLog("ok");
+                writeLog("drone pos: %f, %f", drone_position[0], drone_position[1]);
 
-            // printf("%f, %f\n", drone_position[0], drone_position[1]);
-            fflush(stdout);
+            }
 
             if (isinf(drone_position[0]) || isinf(drone_position[1]))
             {
@@ -243,7 +245,7 @@ int main(int argc, char *argv[])
         // increment the speed index to simulate the drone
         speed_index++;
 
-        //printf("speed_index: %d\n", speed_index);
+        // printf("speed_index: %d\n", speed_index);
     }
 
     // close the read file descriptor for fdd_s

@@ -15,14 +15,13 @@
 #include <sys/ipc.h>
 #include "arplib.h"
 
-#define MAX_OBST_ARR_SIZE 10
+#define MAX_OBST_ARR_SIZE 1
 // Seconds of upgrade of the obstacles
-#define N 5
+#define N 1000
 
 //-- Functions header --------------------------------------------
 void writeLog(const char *format, ...);
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
-
 
 int main(int argc, char *argv[])
 {
@@ -89,16 +88,15 @@ int main(int argc, char *argv[])
 
     // initialize the time on random generator
     srand(time(NULL));
-    
+
     double set_of_obstacle[MAX_OBST_ARR_SIZE][2];
     while (1)
     {
         for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
         {
-            set_of_obstacle[i][0] = (double)rand() / RAND_MAX;
-            set_of_obstacle[i][1] = (double)rand() / RAND_MAX;
+            set_of_obstacle[i][0] = (double)rand() / RAND_MAX - 0.5;
+            set_of_obstacle[i][1] = (double)rand() / RAND_MAX - 0.5;
         }
-        
 
         if (write(fdo_s[1], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
         {

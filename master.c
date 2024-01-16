@@ -343,7 +343,7 @@ int main()
     }
 
     //---- OBSTACLE process -------------------------------------------------------------------------------------------------------
-    char *arg_list_obstacle[] = {"Konsole", "-e", "./obstacle", str_fd5[0], str_fd5[1], str_fdo_s[0], str_fdo_s[1], NULL};
+    char *arg_list_obstacle[] = {"Konsole", "-e",  "./obstacle", str_fd5[0], str_fd5[1], str_fdo_s[0], str_fdo_s[1], NULL};
     child_pids[4] = spawn("konsole", arg_list_obstacle);
     writeLog("MASTER spawn obstacle with pid: %d ", child_pids[4]);
     // close the write file descriptor
