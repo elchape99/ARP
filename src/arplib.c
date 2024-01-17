@@ -31,7 +31,7 @@ int spawn(const char *program, char **arg_list)
 void writeLog(const char *format, ...)
 {
 
-    FILE *logfile = fopen("logfile.txt", "a");
+    FILE *logfile = fopen("../log/logfile.txt", "a");
     if (logfile == NULL)
     {
         perror("server: error opening logfile");

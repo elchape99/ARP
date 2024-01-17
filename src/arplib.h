@@ -12,16 +12,4 @@ void writeLog(const char *format, ...);
 int sign(int x);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 #endif //ARPLIB_H

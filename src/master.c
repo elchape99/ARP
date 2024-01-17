@@ -14,55 +14,9 @@
 #include <sys/wait.h>
 #include <stdarg.h>
 #include "arplib.h"
+#include "../config/config.h"
 
-#define PROCESS_NUMBER 5;
-/*
-//Function for write into logfile 
-void writeLog(const char *format, ...)
-{
 
-    FILE *logfile = fopen("logfile.txt", "a");
-    if (logfile < 0)
-    {
-        perror("master: opening logfile");
-        exit(EXIT_FAILURE);
-    }
-    va_list args;
-    va_start(args, format);
-
-    time_t current_time;
-    time(&current_time);
-
-    fprintf(logfile, "%s => ", ctime(&current_time));
-    vfprintf(logfile, format, args);
-
-    va_end(args);
-    fflush(logfile);
-    if (fclose(logfile) < 0)
-    {
-        perror("master: fclose logfile");
-        exit(EXIT_FAILURE);
-    }
-}
-//This function do an exec in child process
-int spawn(const char *program, char **arg_list)
-{
-    pid_t child_pid = fork();
-    if (child_pid != 0)
-        // main process
-        return child_pid;
-    else
-    {
-        // child process
-        if (execvp(program, arg_list) == -1)
-        {
-            perror("master: exec ");
-            writeLog("==> ERROR ==> master: exec failed, %m ");
-            return 1;
-        }
-    }
-}
-*/
 int main()
 {
     /* The master spawn all the process  in oreder server, input, drone, target, obstacle, with watchdog at the end
@@ -84,7 +38,7 @@ int main()
     int i;
 
     // Inizialize the log file with mode w, all the data inside will be delete
-    FILE *logfile = fopen("logfile.txt", "w");
+    FILE *logfile = fopen("../log/logfile.txt", "w");
     if (logfile < 0)
     { // if problem opening file, send error
         perror("master: fopen logfile");

@@ -15,37 +15,7 @@
 #include <ncurses.h>
 #include <ctype.h>
 #include "arplib.h"
-
-#define WIND_NUMBER 12
-#define LIMIT 5
-
-/* function for write in logfile*/
-void writeLog(const char *format, ...)
-{
-
-    FILE *logfile = fopen("logfile.txt", "a");
-    if (logfile == NULL)
-    {
-        perror("server: error opening logfile");
-        exit(EXIT_FAILURE);
-    }
-    va_list args;
-    va_start(args, format);
-
-    time_t current_time;
-    time(&current_time);
-
-    fprintf(logfile, "%s => ", ctime(&current_time));
-    vfprintf(logfile, format, args);
-
-    va_end(args);
-    fflush(logfile);
-    if (fclose(logfile) == -1)
-    {
-        perror("fclose logfile");
-        writeLog("ERROR ==> server: fclose logfile");
-    }
-}
+#include "../config/config.h"
 
 // signals handler functions
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
@@ -171,7 +141,7 @@ int main(int argc, char *argv[])
 
     WINDOW *wind_pointer_array[WIND_NUMBER] = {external_window, printing_window, quit_butt, up_left_butt, up_butt, up_right_butt, left_butt, central_butt, right_butt, down_left_butt, down_butt, down_right_butt};
 
-    FILE *rules_text = fopen("rule.txt", "r");
+    FILE *rules_text = fopen("../config/rule.txt", "r");
     if (rules_text == NULL)
     {
         printf("null file pointer\n");
@@ -190,7 +160,7 @@ int main(int argc, char *argv[])
     refresh();
 
     // print the rules and wait to start the game
-    print_screen("rule.txt", 21, 78);
+    print_screen("../config/rule.txt", 21, 78);
     // inizio del gioco
 
     open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
@@ -201,7 +171,7 @@ int main(int argc, char *argv[])
         active_power = manage_input(input_char, icon_string, active_power, resulting_power);
         if (resulting_power[0] == resulting_power_old[0] && resulting_power[1] == resulting_power_old[1])
         {
-            //printf("no print \n");
+            // printf("no print \n");
         }
         else
         {
@@ -212,8 +182,8 @@ int main(int argc, char *argv[])
                 writeLog("==> ERROR ==> input: write fdi_s[1] %m ");
             }
 
-            //printf("%f, %f\n", resulting_power[0], resulting_power[1]);
-            //fflush(stdout);
+            // printf("%f, %f\n", resulting_power[0], resulting_power[1]);
+            // fflush(stdout);
             writeLog("input: %f, %f", resulting_power[0], resulting_power[1]);
 
             resulting_power_old[0] = resulting_power[0];
@@ -282,7 +252,8 @@ WINDOW *create_new_window(int row, int col, int ystart, int xstart, char icon, i
     return local_window;
 }
 
-void print_screen(char *txt_path, int txt_row, int txt_col){
+void print_screen(char *txt_path, int txt_row, int txt_col)
+{
     FILE *screen_img = fopen(txt_path, "r");
     if (screen_img == NULL)
     {
@@ -296,8 +267,7 @@ void print_screen(char *txt_path, int txt_row, int txt_col){
     char resisize_request[] = "please resize the window";
     char rule_line[100];
 
-
-     // print rules
+    // print rules
     while (Srow < txt_row || Scol < txt_col)
     {
         mvaddstr((Srow / 2), ((Scol - strlen(resisize_request)) / 2), resisize_request);
@@ -322,7 +292,7 @@ void print_screen(char *txt_path, int txt_row, int txt_col){
 
     while ((start_char = getch()) != ' ')
     {
-        //don't do anything
+        // don't do anything
     }
 
     clear();
@@ -508,8 +478,9 @@ int *manage_input(char input_char, char *icon_string, int *active_power, double 
         else
         {
             active_power[pointer_index] += 1;
-            
-            if (active_power[pointer_index] > LIMIT){
+
+            if (active_power[pointer_index] > LIMIT)
+            {
                 active_power[pointer_index] -= 1;
             }
 

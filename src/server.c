@@ -486,11 +486,11 @@ int main(int argc, char *argv[])
             wrefresh(spawn_window);
             if (counter == MAX_TARG_ARR_SIZE)
             {
-                print_screen("winScreen.txt", 6, 87);
+                print_screen("../config/winScreen.txt", 6, 87);
 
                 //
                 exit(EXIT_SUCCESS);
-                // after closing win screen, the server will be closed 
+                // after closing win screen, the server will be closed
             }
         }
         // gestione del resize della finestra
@@ -557,39 +557,25 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-//// ---- Functions sections -----------------------------------------------------------
-/* function for write in logfile*/
-/*
-void writeLog(const char *format, ...)
+//////////////////////////////////////////////////////////////////////////
+//                    Function Section                                  //
+//////////////////////////////////////////////////////////////////////////
+void sigusr1Handler(int signum, siginfo_t *info, void *context)
 {
-
-    FILE *logfile = fopen("logfile.txt", "a");
-    if (logfile == NULL)
+    if (signum == SIGUSR1)
     {
-        perror("server: error opening logfile");
-        exit(EXIT_FAILURE);
-    }
-    va_list args;
-    va_start(args, format);
-
-    time_t current_time;
-    time(&current_time);
-
-    fprintf(logfile, "%s => ", ctime(&current_time));
-    vfprintf(logfile, format, args);
-
-    va_end(args);
-    fflush(logfile);
-    if (fclose(logfile) == -1)
-    {
-        perror("fclose logfile");
-        writeLog("ERROR ==> server: fclose logfile");
+        // send a signal SIGUSR2 to watchdog
+        if (kill(info->si_pid, SIGUSR2) == -1)
+        {
+            perror("server: kill SIGUSR2");
+            writeLog("==> ERROR ==> serevr: kill SIGUSR2");
+        }
+        writeLog("SERVER, pid %d, received signal from wd pid: %d ", getpid(), info->si_pid);
     }
 }
-*/
 
-void print_screen(char *txt_path, int txt_row, int txt_col){
+void print_screen(char *txt_path, int txt_row, int txt_col)
+{
     FILE *screen_img = fopen(txt_path, "r");
     if (screen_img == NULL)
     {
@@ -602,9 +588,7 @@ void print_screen(char *txt_path, int txt_row, int txt_col){
     char start_char = '?';
     char resisize_request[] = "please resize the window";
     char rule_line[100];
-
-
-     // print rules
+    // print rules
     while (Srow < txt_row || Scol < txt_col)
     {
         mvaddstr((Srow / 2), ((Scol - strlen(resisize_request)) / 2), resisize_request);
@@ -629,33 +613,12 @@ void print_screen(char *txt_path, int txt_row, int txt_col){
 
     while ((start_char = getch()) != ' ')
     {
-        //don't do anything
+        // don't do anything
     }
 
     clear();
     refresh();
 }
-
-void sigusr1Handler(int signum, siginfo_t *info, void *context)
-{
-    if (signum == SIGUSR1)
-    {
-        // send a signal SIGUSR2 to watchdog
-        kill(info->si_pid, SIGUSR2);
-        writeLog("SERVER, pid %d, received signal from wd pid: %d ", getpid(), info->si_pid);
-    }
-}
-/*
-int sign(int x)
-{
-    if (x < 0)
-        return -1;
-    else if (x > 0)
-        return 1;
-    else
-        return 1;
-}
-*/
 
 WINDOW *create_new_window(int row, int col, int ystart, int xstart)
 
