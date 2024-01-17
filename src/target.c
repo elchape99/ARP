@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     int i;
     pid_t target_pid = getpid();
     // write into logfile the pid
-    writeLog("TARGET create with pid %d ", target_pid);
+    writeLog("TARGET created with pid %d ", target_pid);
 
     // configure the handler for sigusr1
     struct sigaction sa_usr1;
@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
     {
         perror("target: sigaction");
         writeLog("==> ERROR ==> target: sigaction input %m ");
+        exit(EXIT_FAILURE); // Esce in caso di errore
     }
 
     // Take the fd for comunicating with master, it's position is 1,2 in argv[]
@@ -49,22 +50,25 @@ int main(int argc, char *argv[])
     // close the read fiel descriptor fd1[0]
     if (close(fd4[0]) < 0)
     {
-        perror("targtet: close fd1[1]");
-        writeLog("==> ERROR ==> target: close fd1[0], %m ");
+        perror("target: close fd4[0]");
+        writeLog("==> ERROR ==> target: close fd4[0], %m ");
+        exit(EXIT_FAILURE); // Esce in caso di errore
     }
     // write the pid in the pipe
     if (write(fd4[1], &target_pid, sizeof(target_pid)) < 0)
     {
         perror("target: write fd4[1],");
         writeLog("==> ERROR ==> target, write fd4[1] %m ");
+        exit(EXIT_FAILURE); // Esce in caso di errore
     }
     if (close(fd4[1]) < 0)
     {
         perror("target: close fd4[1]");
         writeLog("==> ERROR ==> target: close fd4[1], %m ");
+        exit(EXIT_FAILURE); // Esce in caso di errore
     }
 
-    //// pipe for comunication between target->server, are in position 3, 4
+    //// pipe for communication between target->server, are in position 3, 4
     int fdt_s[2];
     for (i = 3; i < 5; i++)
     {
@@ -77,6 +81,7 @@ int main(int argc, char *argv[])
     {
         perror("target: close fdt_s[0] ");
         writeLog("==> ERROR ==> target: close fdt_s[0], %m ");
+        exit(EXIT_FAILURE); // Esce in caso di errore
     }
 
     double set_of_target[MAX_TARG_ARR_SIZE][2];
@@ -88,25 +93,25 @@ int main(int argc, char *argv[])
 
     if (write(fdt_s[1], set_of_target, sizeof(double) * MAX_TARG_ARR_SIZE * 2) == -1)
     {
-        perror("obstacle: error write fdo_s[1]");
-        writeLog("==> ERROR ==> obstacle: write fdo_s[1], %m ");
-    }
-    for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
-    {
-        printf("%f, %f \n", set_of_target[i][0], set_of_target[i][1]);
-        fflush(stdout);
+        perror("obstacle: error write fdt_s[1]");
+        writeLog("==> ERROR ==> obstacle: write fdt_s[1], %m ");
+        exit(EXIT_FAILURE); // Esce in caso di errore
     }
 
     while (1)
     {
         sleep(1);
     }
+
     // close the write file descriptor, target only write data in the pipe
     if (close(fdt_s[1]) == -1)
     {
         perror("target: close fdt_s[1] ");
         writeLog("==> ERROR ==> target: close fdt_s[1], %m ");
+        exit(EXIT_FAILURE); // Esce in caso di errore
     }
+
+    return 0; // Aggiunto il ritorno 0 alla fine della funzione main
 }
 
 ////---- Functions section -----------------------------------------------------------
@@ -127,6 +132,7 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context)
         {
             perror("target: kill SIGUSR2 ");
             writeLog("==> ERROR ==> target: kill SIGUSR2 %m");
+            exit(EXIT_FAILURE); // Esce in caso di errore
         }
     }
 }

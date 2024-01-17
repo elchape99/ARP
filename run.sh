@@ -16,7 +16,7 @@ gcc -o bin/input src/input.c -L./lib -larplib -lncurses
 gcc -o bin/drone src/drone.c -L./lib -larplib
 gcc -o bin/target src/target.c -L./lib -larplib
 gcc -o bin/obstacle src/obstacle.c -L./lib -larplib
-gcc -o bin/wd src/wd.c 
+gcc -o bin/wd src/wd.c -L./lib -larplib
 
 # Cambia la directory in build_process
 cd bin

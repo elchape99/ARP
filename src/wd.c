@@ -97,10 +97,10 @@ int main(int argc, char *argv[])
                 /*kill all process*/
                 for (int j = 0; j < num_ps + 1; j++)
                 {
-                    if (kill(pids_from_master[j], SIGKILL) == 0)
+                    if (kill(pids_from_process[j], SIGKILL) == 0)
                     {
                         /*write into logfile that wd close the process*/
-                        writeLog(" * WATCHDOG: process %d is closed by wd ", pids_from_master[j]);
+                        writeLog(" * WATCHDOG: process %d is closed by wd ", pids_from_process[j]);
                     }
                     else
                     {

@@ -167,6 +167,8 @@ int main(int argc, char *argv[])
     int distance[2] = {0};
     int counter = 0;
 
+    int result;
+
     // variable for select
     int retVal_sel;
     fd_set read_fd;
@@ -263,7 +265,7 @@ int main(int argc, char *argv[])
         if (retVal_sel == -1)
         {
             perror("server: error select: ");
-            writeLog("==> ERROR ==> server:select %m ");
+            writeLog("==> ERROR ==> server: select %m ");
         }
         else if (retVal_sel == 0)
         {
@@ -292,7 +294,6 @@ int main(int argc, char *argv[])
                             // convert the position in integer
                             int_dronePosition[0] = (int)dronePosition[0];
                             int_dronePosition[1] = (int)dronePosition[1];
-                            writeLog("server drone position x = %lf, y = %lf", dronePosition[0], dronePosition[1]);
                             // variable for print
                             new_position = 1;
                         }
@@ -312,8 +313,6 @@ int main(int argc, char *argv[])
                             {
                                 int_set_of_obstacle[i][0] = (int)(set_of_obstacle[i][0] * spawn_Col);
                                 int_set_of_obstacle[i][1] = (int)(set_of_obstacle[i][1] * spawn_Row);
-                                // writeLog("server: print one obstacle integer\t x = %i, y = %i", int_set_of_obstacle[i][0], int_set_of_obstacle[i][1]);
-                                // writeLog("server: print one obstacle\t x = %lf, y = %lf", set_of_obstacle[i][0], set_of_obstacle[i][1]);
                             }
                             new_obstacles = 1; // set the flag for print the map
                         }
@@ -326,10 +325,6 @@ int main(int argc, char *argv[])
                             perror("server: read fdi_s[0]");
                             writeLog("==> ERROR ==> server:read fdi_s[0], %m ");
                         }
-                        else
-                        {
-                            writeLog("input force:\tx = %f, y = %f", inputForce[0], inputForce[1]);
-                        }
                     }
                     else
                     {
@@ -339,6 +334,7 @@ int main(int argc, char *argv[])
             }
         }
         ///////////// --- compute all the force apply to the drone /////////////////////////////////////////////
+
         // useful variables
         // initilize every loop the distance obj-drone to zero
         distance[0] = 0;
@@ -394,9 +390,6 @@ int main(int argc, char *argv[])
                 // general case when the drone is OBST_RADIUS_CLOSE < drone < OBST_RADIUS_FAR
                 obstForce[1] = obstForce[1] + (sign(distance[1]) * ((K_STD * abs(inputForce[1])) / pow((distance[1]), 2)));
             }
-
-            // writeLog("server: DIST\tx = %d, y = %d, ---  DRONE (%d, %d), OBST (%d, %d), F.INPUT (%lf, %lf), F.OBST (%lf, %lf), F.TOT (%lf,%lf)", distance[0], distance[1], int_dronePosition[0], int_dronePosition[1], int_set_of_obstacle[i][0], int_set_of_obstacle[i][1], inputForce[0], inputForce[1], obstForce[0], obstForce[1], totalForce[0], totalForce[1]);
-            //  writeLog("server obstForce-iesima  \t x = %lf, y = %lf", obstForce[0], obstForce[1]);
         }
 
         // compute the total force as sum of all the force on the arena
@@ -432,16 +425,14 @@ int main(int argc, char *argv[])
         else
         {
             // write the total force to drone
+            do
+            {
+                result = write(fds_d[1], totalForce, sizeof(double) * 2);
+            } while (result == -1 && errno == EINTR);
             if (write(fds_d[1], totalForce, sizeof(double) * 2) == -1)
             {
                 perror("server: write fds_d[1]");
                 writeLog("==> ERROR ==> server: write fds_d[1], %m ");
-            }
-            else
-            {
-                writeLog("server total force \tx = %lf, y = %lf", totalForce[0], totalForce[1]);
-                // writeLog("server inputForce\t x = %lf, y = %lf", inputForce[0], inputForce[1]);
-                // writeLog("server obstForce\t x = %lf, y = %lf", obstForce[0], obstForce[1]);
             }
         }
         ///// ncurses part forupdate teh drone and obstacle position
@@ -485,7 +476,7 @@ int main(int argc, char *argv[])
                 }
             }
             wattr_off(spawn_window, COLOR_PAIR(2), NULL);
-            
+
             // refresch of the ncurses window
             wrefresh(spawn_window);
             if (counter == MAX_TARG_ARR_SIZE)
@@ -594,7 +585,7 @@ void print_screen(char *txt_path, int txt_row, int txt_col)
     char rule_line[100];
     // print rules
     while (Srow < txt_row || Scol < txt_col)
-    {   
+    {
         clear();
         mvaddstr((Srow / 2), ((Scol - strlen(resisize_request)) / 2), resisize_request);
         refresh();

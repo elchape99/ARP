@@ -36,10 +36,11 @@ int main(int argc, char *argv[])
     {
         perror("obstacle: sigaction");
         writeLog("==> ERROR ==> obstacle: sigaction %m ");
+        exit(EXIT_FAILURE);
     }
 
     //// -- manage pipe ----------------------------------------------------------
-    // Take the fd for comunicating with master, it's position is 1,2 in argv[]
+    // Take the fd for communicating with master; its positions are 1,2 in argv[]
     int fd5[2];
     for (i = 1; i < 3; i++)
     {
@@ -52,20 +53,23 @@ int main(int argc, char *argv[])
     {
         perror("obstacle: close fd5[1]");
         writeLog("==> ERROR ==> obstacle: close fd5[0], %m ");
+        exit(EXIT_FAILURE);
     }
     // write the pid in the pipe
     if (write(fd5[1], &obstacle_pid, sizeof(obstacle_pid)) < 0)
     {
         perror("obstacle: write fd5[1],");
         writeLog("==> ERROR ==> obstacle, write fd5[1] %m ");
+        exit(EXIT_FAILURE);
     }
     if (close(fd5[1]) < 0)
     {
         perror("obstacle: close fd5[1]");
         writeLog("==> ERROR ==> obstacle: close fd5[1], %m ");
+        exit(EXIT_FAILURE);
     }
 
-    //// pipe for communication between obstacle -> server, are in ositions 3, 4 of argv[]
+    //// pipe for communication between obstacle -> server, are in positions 3, 4 of argv[]
     printf("print in screen the value of argv 3 and 4: %s, %s ", argv[3], argv[4]);
 
     int fdo_s[2];
@@ -80,6 +84,7 @@ int main(int argc, char *argv[])
     {
         perror("obstacle: close fdo_s[0] ");
         writeLog("==> ERROR ==> obstacle: close fdo_s[0], %m ");
+        exit(EXIT_FAILURE);
     }
 
     // initialize the time on random generator
@@ -100,19 +105,14 @@ int main(int argc, char *argv[])
         {
             perror("obstacle: error write fdo_s[1]");
             writeLog("==> ERROR ==> obstacle: write fdo_s[1], %m ");
+            exit(EXIT_FAILURE);
         }
-        for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
-        {
-            printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
-            fflush(stdout);
-        }
-        // generat obstacle every N seconds, implement a non blocking timer for avoid the problem with signals
+        // generate obstacle every N seconds; implement a non-blocking timer to avoid problems with signals
         time_t t2 = time(NULL);
-        while((t2 -t) < N*60){
+        while ((t2 - t) < N)
+        {
             t2 = time(NULL);
-
         }
-        
     }
 
     // close the write file descriptor fdo_s
@@ -120,12 +120,15 @@ int main(int argc, char *argv[])
     {
         perror("obstacle: close fdo_s[1] ");
         writeLog("==> ERROR ==> obstacle: close fdo_s[1], %m ");
+        exit(EXIT_FAILURE);
     }
+
+    exit(EXIT_SUCCESS); // Not reached, but included for completeness
 }
 
 //// --- Function section -------------------------------------------------------------
 
-// Inserire perror nella kill
+// Insert perror in the kill
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
 {
     if (signum == SIGUSR1)
@@ -139,6 +142,7 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context)
         {
             perror("obstacle: kill SIGUSR2 ");
             writeLog("==> ERROR ==> obstacle: kill SIGUSR2 %m ");
+            exit(EXIT_FAILURE);
         }
     }
 }

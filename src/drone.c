@@ -14,6 +14,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <math.h>
+#include <errno.h>
 #include "arplib.h"
 #include "../config/config.h"
 
@@ -56,18 +57,21 @@ int main(int argc, char *argv[])
     {
         perror("drone: close fd3[0]");
         writeLog("ERROR ==>d rone: close fd3[0] %m ");
+        exit(EXIT_FAILURE);
     }
     // write the pid inside the pipe
     if (write(fd3[1], &drone_pid, sizeof(drone_pid)) < 0)
     {
         perror("drone: write fd3[1] ");
         writeLog("ERROR ==> drone: write fd3[1] %m ");
+        exit(EXIT_FAILURE);
     }
     // close the write file descriptor fd2[1]
     if (close(fd3[1]) < 0)
     {
         perror("drone: close fd3[1] drone");
         writeLog("ERROR ==> drone:  close fd3[1] drone %m ");
+        exit(EXIT_FAILURE);
     }
     //// pipe for comunication between drone -> server, are in position 3, 4
     int fdd_s[2];
@@ -81,6 +85,7 @@ int main(int argc, char *argv[])
     {
         perror("drone: close fdd_s[0] ");
         writeLog("ERROR ==> drone: close fd[1] %m ");
+        exit(EXIT_FAILURE);
     }
     writeLog("SERVER value of fdd_s are: %d %d ", fdd_s[0], fdd_s[1]);
 
@@ -137,26 +142,22 @@ int main(int argc, char *argv[])
 
         time_sel.tv_sec = 0; // timeout settatto a 0.5 secondi
         time_sel.tv_usec = 3000;
-
-        if ((retVal_sel = select(fds_d[0] + 1, &read_fd, NULL, NULL, &time_sel)) < 0)
+        do
         {
-            perror("drone: error select: "); // controllo errori
-            writeLog("ERROR ==> drone: select fds_d[0] %m ");
+            retVal_sel = select(fds_d[0] + 1, &read_fd, NULL, NULL, &time_sel);
+        } while (retVal_sel == -1 && errno == EINTR);
+        if ((retVal_sel = select(fds_d[0] + 1, &read_fd, NULL, NULL, &time_sel)) == -1)
+        {
+            perror("drone: error select "); // controllo errori
+            writeLog("==> ERROR ==> drone: select fds_d[0] %m ");
+            exit(EXIT_FAILURE);
         }
         else
         { // nuovi dati disponibili
             if ((retVal_read = read(fds_d[0], total_force, sizeof(double) * 2)) < 0)
             {
-                perror("errore read"); // controllo errore read
-                writeLog("ERROR ==> drone: read fds_d[0] %m ");
-            }
-            else
-            {
-                // if ((speed_index % SSLOW) == 0)
-                //{
-                printf("date read pipe, total force\t%f %f \n", total_force[0], total_force[1]); // controllo valori lettura
-                fflush(stdout);
-                //}
+                perror("drone: read fds_d[0]"); // controllo errore read
+                writeLog("==> ERROR ==> drone: read fds_d[0] %m ");
             }
         }
 
@@ -179,28 +180,6 @@ int main(int argc, char *argv[])
             drone_position[0] = Xpos;
             drone_position[1] = Ypos;
         }
-
-        // -------------------- DEBUG PRINT -------------------------------------------------------- //
-        if ((speed_index % FFAST) == 0)
-        {
-            // printf("FORCE from ptr \t%f, %f\n", *XForce_p, *YForce_p); // controllo valori lettura
-            // fflush(stdout);
-        }
-
-        if ((speed_index % FFAST) == 0)
-        {
-            // printf("VELOC from ptr \t%f, %f\n", *Xvel_p, *Yvel_p); // controllo valori lettura
-            // fflush(stdout);
-        }
-
-        if ((speed_index % FFAST) == 0)
-        {
-            // printf("DRONE position \t%f, %f\n", *Xpos_p, *Ypos_p); // controllo valori lettura
-            // fflush(stdout);
-        }
-
-        // -------------------- DEBUG PRINT -------------------------------------------------------- //
-
         if ((drone_position[0] != drone_position_old[0] || drone_position[1] != drone_position_old[1]))
         {
             // sending force data to the server process, trogh the pipe fdd_s[1]
@@ -208,23 +187,8 @@ int main(int argc, char *argv[])
             {
                 perror("drone: write fdd_s[1] ");
                 writeLog("==> ERROR ==> drone: write dd_s[1] %m ");
+                exit(EXIT_FAILURE);
             }
-            else
-            {
-                writeLog("ok");
-                writeLog("drone pos: %f, %f", drone_position[0], drone_position[1]);
-
-            }
-
-            if (isinf(drone_position[0]) || isinf(drone_position[1]))
-            {
-                writeLog("drone: %f, %f, %f, %f, %f, %f", drone_position[0], drone_position[1], Xvel, Yvel, XForce, YForce);
-            }
-            else if ((speed_index % SLOW) == 0)
-            {
-                writeLog("drone: %f, %f", drone_position[0], drone_position[1]);
-            }
-
             drone_position_old[0] = drone_position[0];
             drone_position_old[1] = drone_position[1];
         }
@@ -240,12 +204,14 @@ int main(int argc, char *argv[])
     {
         perror("drone: close fdd_s[0]");
         writeLog("==> ERROR ==> drone: clse fdd_s[0] %m ");
+        exit(EXIT_FAILURE);
     }
     // close the write file descriptor fd2[1]
     if (close(fds_d[1]) == -1)
     {
         perror("drone: close fds_d[1]");
         writeLog("==> ERROR ==> drone: close fds_d[1] %m ");
+        exit(EXIT_FAILURE);
     }
     return 0;
 }

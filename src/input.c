@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     WINDOW *down_left_butt;
     WINDOW *down_right_butt;
 
-    // definizione delle variabili di ncurses ------ 3    4    5    6    7    8    9    10   11   
+    // definizione delle variabili di ncurses ------ 3    4    5    6    7    8    9    10   11
     char icon_string[WIND_NUMBER] = {'-', '-', 'Q', 'W', 'E', 'R', 'S', 'D', 'F', 'X', 'C', 'V'};
 
     int *active_power = (int *)malloc(WIND_NUMBER * sizeof(int));
@@ -180,17 +180,9 @@ int main(int argc, char *argv[])
                 perror("input: write fdi_s[1] ");
                 writeLog("==> ERROR ==> input: write fdi_s[1] %m ");
             }
-
-            // printf("%f, %f\n", resulting_power[0], resulting_power[1]);
-            // fflush(stdout);
-            writeLog("input: %f, %f", resulting_power[0], resulting_power[1]);
-
             resulting_power_old[0] = resulting_power[0];
             resulting_power_old[1] = resulting_power[1];
         }
-
-        //
-
         case_execution(input_char, wind_pointer_array, icon_string, active_power);
 
         getmaxyx(stdscr, SrowNew, ScolNew);
@@ -473,7 +465,7 @@ int *manage_input(char input_char, char *icon_string, int *active_power, double 
             active_power[7] = -1;
 
             /*
-            // definizione delle variabili di ncurses ------ 3    4    5    6    7    8    9    10   11   
+            // definizione delle variabili di ncurses ------ 3    4    5    6    7    8    9    10   11
             char icon_string[WIND_NUMBER] = {'-', '-', 'Q', 'W', 'E', 'R', 'S', 'D', 'F', 'X', 'C', 'V'};
             */
 
