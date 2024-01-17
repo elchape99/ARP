@@ -39,7 +39,7 @@ The keys you can push are:
  
 ### Project Structure
 
-The simulator, written in POSIX standard, consists of 5 processes working concurrently: `master.c`, `server.c`, `drone.c`, `input.c`, `obstacle.c`, `targhet.c`, and `wd.c`.
+The simulator, written in POSIX standard, consists of 5 processes working concurrently: `master.c`, `server.c`, `drone.c`, `input.c`, `obstacle.c`, `target.c`, and `wd.c`.
 
 - **`master.c`:** Creates all processes using fork/exec* sys calls. It creates the server and input processes for a graphical interface. This process also creates the necessary pipes for communication between processes. All the communication is done using pipes, the initialization pipes characterized by a numeric index fd_<progessive_number> are used to ensure that the Watchdog process is in possession of the correct pid of each process. Exception made for the WD before starting the normal execution each process sends it's pid back to the master process, and using the environment variable argc and argv the WD is able to recive all the correct pid.
 
