@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <semaphore.h>
 #include <sys/mman.h>
+#include <errno.h>
 #include <signal.h>
 #include <time.h>
 #include <stdarg.h>
@@ -91,7 +92,16 @@ int main(int argc, char *argv[])
         set_of_target[i][1] = ((double)rand() / RAND_MAX) - 0.5;
     }
 
-    if (write(fdt_s[1], set_of_target, sizeof(double) * MAX_TARG_ARR_SIZE * 2) == -1)
+    // define write retVal
+    int retVal_write;
+
+    // avoid syscall beign blocked by a signal
+    do
+    {
+        retVal_write = write(fdt_s[1], set_of_target, sizeof(double) * MAX_TARG_ARR_SIZE * 2);
+    }while(retVal_write == -1 && errno == EINTR);
+    // check for general errors
+    if (retVal_write < 0)
     {
         perror("obstacle: error write fdt_s[1]");
         writeLog("==> ERROR ==> obstacle: write fdt_s[1], %m ");

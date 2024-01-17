@@ -118,7 +118,6 @@ int main(int argc, char *argv[])
     double Xvel = 0.0, Yvel = 0.0, Xpos = 0.0, Ypos = 0.0;
     double *Xvel_p = &Xvel, *Xpos_p = &Xpos, *Yvel_p = &Yvel, *Ypos_p = &Ypos;
 
-    int retVal_read;
     double total_force[2] = {0.0, 0.0};
     double drone_position[2] = {0.0, 0.0};
     double drone_position_old[2] = {0.0, 0.0};
@@ -127,6 +126,10 @@ int main(int argc, char *argv[])
     int retVal_sel;
     fd_set read_fd;
     struct timeval time_sel;
+
+    // definizione return value write e read
+    int retVal_read;
+    int retVal_write;
 
     // ciclo infinito per ricever input dal server
 
@@ -153,11 +156,19 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
         else
-        { // nuovi dati disponibili
-            if ((retVal_read = read(fds_d[0], total_force, sizeof(double) * 2)) < 0)
+        { // nuovi dati disponibilià
+            // avoid read being interrupted by a signal
+            do
+            {
+                retVal_read = read(fds_d[0], total_force, sizeof(double) * 2);
+            } while (retVal_read == -1 && errno == EINTR);
+
+            // general read error
+            if (retVal_read < 0)
             {
                 perror("drone: read fds_d[0]"); // controllo errore read
                 writeLog("==> ERROR ==> drone: read fds_d[0] %m ");
+                exit(EXIT_FAILURE);
             }
         }
 
@@ -183,12 +194,18 @@ int main(int argc, char *argv[])
         if ((drone_position[0] != drone_position_old[0] || drone_position[1] != drone_position_old[1]))
         {
             // sending force data to the server process, trogh the pipe fdd_s[1]
-            if (write(fdd_s[1], drone_position, sizeof(double) * 2) < 0)
+            do
+            {
+                retVal_write = write(fdd_s[1], drone_position, sizeof(double) * 2);
+            } while (retVal_write == -1 && errno == EINTR);
+            // general write error
+            if (retVal_write < 0)
             {
                 perror("drone: write fdd_s[1] ");
                 writeLog("==> ERROR ==> drone: write dd_s[1] %m ");
                 exit(EXIT_FAILURE);
             }
+            // update drone posiiton in process memory
             drone_position_old[0] = drone_position[0];
             drone_position_old[1] = drone_position[1];
         }

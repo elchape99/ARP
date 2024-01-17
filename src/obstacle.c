@@ -11,6 +11,7 @@
 #include <signal.h>
 #include <time.h>
 #include <stdarg.h>
+#include <errno.h>
 #include <sys/shm.h>
 #include <sys/ipc.h>
 #include "arplib.h"
@@ -92,6 +93,10 @@ int main(int argc, char *argv[])
     srand(time(NULL));
 
     double set_of_obstacle[MAX_OBST_ARR_SIZE][2];
+
+    // define write return value
+    int retVal_write;
+
     while (1)
     {
         time_t t = time(NULL);
@@ -101,7 +106,13 @@ int main(int argc, char *argv[])
             set_of_obstacle[i][1] = (double)rand() / RAND_MAX - 0.5;
         }
 
-        if (write(fdo_s[1], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
+        // avoid system call interruption by signal
+        do
+        {
+            retVal_write = write(fdo_s[1], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2);
+        }while(retVal_write == -1 && errno == EINTR);
+        // general write error
+        if ( retVal_write < 0)
         {
             perror("obstacle: error write fdo_s[1]");
             writeLog("==> ERROR ==> obstacle: write fdo_s[1], %m ");
