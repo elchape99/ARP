@@ -47,11 +47,14 @@ int main(int argc, char *argv[])
     {
         perror("sigaction");
         writeLog("ERROR ==> server: sigaction SIGUSR1 %m ");
-
+        exit(EXIT_FAILURE);
         return -1;
     }
 
-    ///////////// MANAGE PIPE /////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //                        MANAGE PIPE                                                //
+    ///////////////////////////////////////////////////////////////////////////////////////
+
     // Take the fd for comunicating with master, it's position is 1,2 in argv[]
     int fd1[2];
     for (i = 1; i < 3; i++)
@@ -65,17 +68,20 @@ int main(int argc, char *argv[])
     {
         perror("server: close fd1[1]");
         writeLog("ERROR ==> server: close fd1[0], %m ");
+        exit(EXIT_FAILURE);
     }
     // write the pid in the pipe
     if (write(fd1[1], &server_pid, sizeof(server_pid)) < 0)
     {
         perror("server: write fd1[1],");
         writeLog("ERROR ==> server, write fd1[1] %m ");
+        exit(EXIT_FAILURE);
     }
     if (close(fd1[1]) < 0)
     {
         perror("server: close fd1[1]");
         writeLog("ERROR ==> server: close fd1[1], %m ");
+        exit(EXIT_FAILURE);
     }
 
     //// Take the fdi_s for comunication input-server, fdi_s are in positions 3, 4
@@ -89,6 +95,7 @@ int main(int argc, char *argv[])
     {
         perror("server: close fdi_s[1]");
         writeLog("ERROR ==> server: close fdi_s[1], %m ");
+        exit(EXIT_FAILURE);
     }
     writeLog("SERVER value of fdi_s are: %d %d ", fdi_s[0], fdi_s[1]);
 
@@ -122,6 +129,7 @@ int main(int argc, char *argv[])
     {
         perror("server: close fdt_s[1]");
         writeLog("ERROR ==> server: close fdt_s[1], %m ");
+        exit(EXIT_FAILURE);
     }
 
     //// Take the fdo_s for comunication between obstacle-server, position 9, 10
@@ -137,12 +145,13 @@ int main(int argc, char *argv[])
     {
         perror("server: close fdo_s[1]");
         writeLog("ERROR ==> server: close fdo_s[1], %m ");
+        exit(EXIT_FAILURE);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    ////---------------- variable for dynamics and force --------------------------
-    /* In our window all the obstacle and targer are printed like int for semplicity, also the drone position is an integer*/
+    //                    VARIABLE FOR DYNAMICS                                                         //
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    // In our window all the obstacle and targer are printed like int for semplicity, also the drone position is an integer
 
     // variable forthe positions of target
     double set_of_target[MAX_TARG_ARR_SIZE][2] = {{0.0}};
@@ -168,6 +177,7 @@ int main(int argc, char *argv[])
     int counter = 0;
 
     int result;
+    int retVal_read;
 
     // variable for select
     int retVal_sel;
@@ -189,10 +199,12 @@ int main(int argc, char *argv[])
     {
         perror("server: read fdt_s[0]");
         writeLog("==> ERROR ==> server:read fdt_s[0], %m ");
+        exit(EXIT_FAILURE);
     }
 
-    //////------ ncurses initialization -------------------------------
-
+    //////////////////////////////////////////////////////////////////////////////////////////
+    //                     NCURSES INITIALIZATION                                           //
+    //////////////////////////////////////////////////////////////////////////////////////////
     // print window for the map
     WINDOW *spawn_window;
     // parte legata ad ncurses per il server
@@ -205,17 +217,13 @@ int main(int argc, char *argv[])
     cbreak();
     noecho();
     keypad(stdscr, TRUE);
-
     // initialize color in the terminal
     start_color();
-
     // define the color pair
     init_pair(1, COLOR_RED, COLOR_BLACK);
     init_pair(2, COLOR_GREEN, COLOR_BLACK);
-
     box(stdscr, 0, 0);
     refresh();
-
     getmaxyx(stdscr, Srow, Scol);
 
     // window for printing the drone, obst, targh
@@ -239,14 +247,18 @@ int main(int argc, char *argv[])
         int_set_of_target[i][1] = (int)(set_of_target[i][1] * spawn_Row);
     }
 
-    // infinite loop
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
+    //                  INFINITE LOOP                                                                   //
+    //////////////////////////////////////////////////////////////////////////////////////////////////////
     while (1)
     {
         // azzero controlli di stampa
         new_position = 0;
         new_obstacles = 0;
 
-        ///////////////////////////// ---- part for the select ----------------------------------------------------------
+        ////////////////////////////////////////////////////////////////////////////////////////////////
+        //              PART RELATED TO SELECT FOR CHOSE THE READ FILE DESCRIPTOR                     //
+        ////////////////////////////////////////////////////////////////////////////////////////////////
         // define the set of fd
         FD_ZERO(&read_fd);
         FD_SET(fdd_s[0], &read_fd);
@@ -256,7 +268,7 @@ int main(int argc, char *argv[])
         // time interval for select
         time_sel.tv_sec = 0;
         time_sel.tv_usec = 3000;
-        // for avid the problem with signals, caal the select until success
+        // do-while statement for avoid problem with signals
         do
         {
             retVal_sel = select(max_fd + 1, &read_fd, NULL, NULL, &time_sel);
@@ -266,13 +278,10 @@ int main(int argc, char *argv[])
         {
             perror("server: error select: ");
             writeLog("==> ERROR ==> server: select %m ");
+            exit(EXIT_FAILURE);
         }
-        else if (retVal_sel == 0)
-        {
-            // timeout expired
-            // printf("timeout expired\n");
-        }
-        else
+        else if (retVal_sel > 0)
+        // case there is some data in the observed file descriptor
         {
             // check wich file descriptor have data inside
             for (i = 0; i < (sizeof(fd_array) / sizeof(int)); i++)
@@ -284,10 +293,15 @@ int main(int argc, char *argv[])
                     if (fd_array[i] == fdd_s[0]) // <<<< drone - server >>>>
                     {
                         // read the position from the drone process
-                        if (read(fdd_s[0], dronePosition, sizeof(double) * 2) == -1)
+                        do
+                        {
+                            retVal_read = read(fdd_s[0], dronePosition, sizeof(double) * 2);
+                        } while (retVal_read == -1 && errno == EINTR);
+                        if (retVal_read = read(fdd_s[0], dronePosition, sizeof(double) * 2) == -1)
                         {
                             perror("server: read fdd_s[0]");
                             writeLog("==> ERROR ==> server:read fdd_s[0], %m ");
+                            exit(EXIT_FAILURE);
                         }
                         else
                         {
@@ -301,10 +315,15 @@ int main(int argc, char *argv[])
                     else if (fd_array[i] == fdo_s[0]) // <<<< obstacle - server >>>>
                     {
                         // read the set of obstacle
-                        if (read(fdo_s[0], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
+                        do
+                        {
+                            retVal_read = read(fdo_s[0], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2);
+                        } while (retVal_read == -1 && errno == EINTR);
+                        if (retVal_read = read(fdo_s[0], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
                         {
                             perror("server: read fdo_s[0]");
                             writeLog("==> ERROR ==> server:read fdo_s[0], %m ");
+                            exit(EXIT_FAILURE);
                         }
                         else
                         {
@@ -320,10 +339,15 @@ int main(int argc, char *argv[])
                     else if (fd_array[i] == fdi_s[0]) // <<<< input - server >>>>
                     {
                         // read the input force
-                        if (read(fdi_s[0], inputForce, sizeof(double) * 2) == -1)
+                        do
+                        {
+                            retVal_read = read(fdi_s[0], inputForce, sizeof(double) * 2);
+                        } while (retVal_read == -1 && errno == EINTR);
+                        if (retVal_read = read(fdi_s[0], inputForce, sizeof(double) * 2) == -1)
                         {
                             perror("server: read fdi_s[0]");
                             writeLog("==> ERROR ==> server:read fdi_s[0], %m ");
+                            exit(EXIT_FAILURE);
                         }
                     }
                     else
@@ -332,9 +356,9 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-        }
-        ///////////// --- compute all the force apply to the drone /////////////////////////////////////////////
-
+        //////////////////////////////////////////////////////////////////////////////////////////////////////
+        //          COMPUTE THE FORCE ON THE DRONE                                                          //
+        //////////////////////////////////////////////////////////////////////////////////////////////////////
         // useful variables
         // initilize every loop the distance obj-drone to zero
         distance[0] = 0;
@@ -343,7 +367,7 @@ int main(int argc, char *argv[])
         obstForce[0] = 0.0;
         obstForce[1] = 0.0;
 
-        /////// Compute the obstacle repulsive force
+        //---------- OBSTACLE REPULSIVE FORCE --------------------------------------------------------------------------
         // for now I am conidering the total force so for the first iteration the drone don't have repulsive force
         for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
         {
@@ -392,11 +416,13 @@ int main(int argc, char *argv[])
             }
         }
 
-        // compute the total force as sum of all the force on the arena
+        //---- COMPUTE TOTAL FORCE ---------------------------------------------------------------------------------------------
         totalForce[0] = inputForce[0] + obstForce[0];
         totalForce[1] = inputForce[1] + obstForce[1];
 
-        /////// Compute the window edge for avoid the drone go outsde the box
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////
+        //          CONTROL THE EDGE OF THE WIDOW                                                            //
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////
         // control that the drone is not outside the upper and lower edge of window
         if (abs(rowSH - int_dronePosition[1]) == 0)
         {
@@ -433,6 +459,7 @@ int main(int argc, char *argv[])
             {
                 perror("server: write fds_d[1]");
                 writeLog("==> ERROR ==> server: write fds_d[1], %m ");
+                exit(EXIT_FAILURE);
             }
         }
         ///// ncurses part forupdate teh drone and obstacle position
@@ -533,27 +560,31 @@ int main(int argc, char *argv[])
     {
         perror("server: close fds_d[1]");
         writeLog("==> ERROR ==> server: close fds_d[1] %m");
+        exit(EXIT_FAILURE);
     }
     if (close(fdi_s[0] == -1))
     {
         perror("server: close fdi_s[0]");
         writeLog("==> ERROR ==> server: close fdi_s[0] %m");
+        exit(EXIT_FAILURE);
     }
     if (close(fdo_s[0] == -1))
     {
         perror("server: close fdo_s[0]");
         writeLog("==> ERROR ==> server: close fdo_s[0] %m");
+        exit(EXIT_FAILURE);
     }
     if (close(fdd_s[0] == -1))
     {
         perror("server: close fdd_s[0]");
         writeLog("==> ERROR ==> server: close fdd_s[0] %m");
+        exit(EXIT_FAILURE);
     }
 
     return 0;
 }
 //////////////////////////////////////////////////////////////////////////
-//                    Function Section                                  //
+//                    FUNCRION SECTION                                  //
 //////////////////////////////////////////////////////////////////////////
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
 {
@@ -564,6 +595,7 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context)
         {
             perror("server: kill SIGUSR2");
             writeLog("==> ERROR ==> serevr: kill SIGUSR2");
+            exit(EXIT_FAILURE);
         }
         writeLog("SERVER, pid %d, received signal from wd pid: %d ", getpid(), info->si_pid);
     }
