@@ -1,0 +1,30 @@
+// config.h
+#ifndef CONFIG_H
+#define CONFIG_H
+
+//----- def for mster -----//
+#define PROCESS_NUMBER 5;
+
+//----- def for server -----//
+#define DRONE_ICON 'X'
+#define MAX_OBST_ARR_SIZE 10 // parameter also for for obstacle process
+#define MAX_TARG_ARR_SIZE 10 // parameter also for the target process
+// big circle for the repulsive force near the obstacle
+#define OBST_RADIUS_FAR 2
+// smlcircle for the repulsive force near the obstacle
+#define OBST_RADIUS_CLOSE 1
+
+// constant for the computation of the force
+// constant for the nearest circe around the obstace
+#define K_CLOSE 3
+// constant for the repulsive force in the cirle lee near the obstace
+#define K_STD 0.5
+//----- def for target -----//
+#define WIND_NUMBER 12
+#define LIMIT 5
+
+//----- def for obstacle -----//
+// Seconds of upgrade of the obstacles
+#define N 1000
+
+#endif // CONFIG_H
