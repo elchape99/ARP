@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
                         {
                             retVal_read = read(fdd_s[0], dronePosition, sizeof(double) * 2);
                         } while (retVal_read == -1 && errno == EINTR);
-                        if (retVal_read = read(fdd_s[0], dronePosition, sizeof(double) * 2) == -1)
+                        if (retVal_read == -1)
                         {
                             perror("server: read fdd_s[0]");
                             writeLog("==> ERROR ==> server:read fdd_s[0], %m ");
@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
                         {
                             retVal_read = read(fdo_s[0], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2);
                         } while (retVal_read == -1 && errno == EINTR);
-                        if (retVal_read = read(fdo_s[0], set_of_obstacle, sizeof(double) * MAX_OBST_ARR_SIZE * 2) == -1)
+                        if (retVal_read == -1)
                         {
                             perror("server: read fdo_s[0]");
                             writeLog("==> ERROR ==> server:read fdo_s[0], %m ");
@@ -343,7 +343,7 @@ int main(int argc, char *argv[])
                         {
                             retVal_read = read(fdi_s[0], inputForce, sizeof(double) * 2);
                         } while (retVal_read == -1 && errno == EINTR);
-                        if (retVal_read = read(fdi_s[0], inputForce, sizeof(double) * 2) == -1)
+                        if (retVal_read == -1)
                         {
                             perror("server: read fdi_s[0]");
                             writeLog("==> ERROR ==> server:read fdi_s[0], %m ");
@@ -356,6 +356,7 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+        }
         //////////////////////////////////////////////////////////////////////////////////////////////////////
         //          COMPUTE THE FORCE ON THE DRONE                                                          //
         //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -583,6 +584,7 @@ int main(int argc, char *argv[])
 
     return 0;
 }
+
 //////////////////////////////////////////////////////////////////////////
 //                    FUNCRION SECTION                                  //
 //////////////////////////////////////////////////////////////////////////
