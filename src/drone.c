@@ -15,17 +15,7 @@
 #include <sys/shm.h>
 #include <math.h>
 #include "arplib.h"
-
-#define INP_NUM 8
-
-#define SSLOW 500
-#define SLOW 300
-#define MEDIUM 200
-#define FAST 100
-#define FFAST 50
-#define CYCLE 1
-
-/////--- Functions heder --------------------------------------------------------------------------------------
+#include "../config/config.h"
 
 /* signal handler functions, when receive a ignal from watchdog sena bach a signal*/
 void sigusr1Handler(int signum, siginfo_t *info, void *context);

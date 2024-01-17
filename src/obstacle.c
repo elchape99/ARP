@@ -16,7 +16,6 @@
 #include "arplib.h"
 #include "../config/config.h"
 
-
 //-- Functions header --------------------------------------------
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
@@ -84,11 +83,13 @@ int main(int argc, char *argv[])
     }
 
     // initialize the time on random generator
+    time_t t = 0;
     srand(time(NULL));
 
     double set_of_obstacle[MAX_OBST_ARR_SIZE][2];
     while (1)
     {
+        time_t t = time(NULL);
         for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
         {
             set_of_obstacle[i][0] = (double)rand() / RAND_MAX - 0.5;
@@ -105,8 +106,13 @@ int main(int argc, char *argv[])
             printf("%f, %f \n", set_of_obstacle[i][0], set_of_obstacle[i][1]);
             fflush(stdout);
         }
-        // generat obstacle every seconds
-        sleep(N);
+        // generat obstacle every N seconds, implement a non blocking timer for avoid the problem with signals
+        time_t t2 = time(NULL);
+        while((t2 -t) < N*60){
+            t2 = time(NULL);
+
+        }
+        
     }
 
     // close the write file descriptor fdo_s

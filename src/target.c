@@ -1,5 +1,3 @@
-//// This process generate 20 target. generate 20 random value from 0 to 1. And send all the value by pipe to server
-
 #include <ncurses.h>
 #include <string.h>
 #include <fcntl.h>
@@ -17,8 +15,6 @@
 #include <sys/ipc.h>
 #include "arplib.h"
 #include "../config/config.h"
-
-
 
 // Functions header
 void sigusr1Handler(int signum, siginfo_t *info, void *context);

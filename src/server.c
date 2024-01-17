@@ -16,20 +16,8 @@
 #include <math.h>
 #include <errno.h>
 #include "arplib.h"
+#include "../config/config.h"
 
-#define DRONE_ICON 'X'
-#define MAX_OBST_ARR_SIZE 10
-#define MAX_TARG_ARR_SIZE 10
-
-#define OBST_RADIUS_FAR 2
-#define OBST_RADIUS_CLOSE 1
-
-// constant for the computation of the force
-#define K_CLOSE 3
-#define K_STD 0.5
-//
-void writeLog(const char *format, ...);
-// Inserire perror nella kill
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
 // int sign(int x);

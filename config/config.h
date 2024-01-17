@@ -13,12 +13,21 @@
 #define OBST_RADIUS_FAR 2
 // smlcircle for the repulsive force near the obstacle
 #define OBST_RADIUS_CLOSE 1
-
 // constant for the computation of the force
 // constant for the nearest circe around the obstace
 #define K_CLOSE 3
 // constant for the repulsive force in the cirle lee near the obstace
 #define K_STD 0.5
+
+//----- def for drone -----//
+#define INP_NUM 8
+#define SSLOW 500
+#define SLOW 300
+#define MEDIUM 200
+#define FAST 100
+#define FFAST 50
+#define CYCLE 1
+
 //----- def for target -----//
 #define WIND_NUMBER 12
 #define LIMIT 5
