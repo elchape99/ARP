@@ -52,6 +52,7 @@ void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
 // declarations of functions used for windows
 void open_control_window(int Srow, int Scol, WINDOW *array_pointer[], char *icon_string, int *active_power);
+void print_screen(char *txt_path, int txt_row, int txt_col);
 
 WINDOW *create_new_window(int row, int col, int ystart, int xstart, char icon, int index, int *active_power);
 void destroy_win(WINDOW *local_win);
@@ -188,36 +189,8 @@ int main(int argc, char *argv[])
     getmaxyx(stdscr, Srow, Scol);
     refresh();
 
-    // print rules
-    while (Srow < 21 || Scol < 78)
-    {
-        mvaddstr((Srow / 2), ((Scol - strlen(resisize_request)) / 2), resisize_request);
-        refresh();
-
-        getmaxyx(stdscr, Srow, Scol);
-    }
-
-    clear();
-    refresh();
-
-    int indx = 0;
-    int indx_offset = (Srow - 21) / 2; // da modificare se cambia il rule.txt
-    while ((fgets(rule_line, sizeof(rule_line), rules_text)) != NULL)
-    {
-        mvprintw(indx + indx_offset, (Scol - strlen(rule_line)) / 2, "%s", rule_line);
-        indx++;
-    }
-
-    refresh();
-    fclose(rules_text);
-
-    while ((start_char = getch()) != ' ')
-    {
-        usleep(100);
-    }
-
-    clear();
-    refresh();
+    // print the rules and wait to start the game
+    print_screen("rule.txt", 21, 78);
     // inizio del gioco
 
     open_control_window(Srow, Scol, wind_pointer_array, icon_string, active_power);
@@ -307,6 +280,53 @@ WINDOW *create_new_window(int row, int col, int ystart, int xstart, char icon, i
 
     wrefresh(local_window);
     return local_window;
+}
+
+void print_screen(char *txt_path, int txt_row, int txt_col){
+    FILE *screen_img = fopen(txt_path, "r");
+    if (screen_img == NULL)
+    {
+        printf("null file pointer\n");
+        fflush(stdout);
+    }
+
+    int Srow, Scol;
+    getmaxyx(stdscr, Srow, Scol);
+    char start_char = '?';
+    char resisize_request[] = "please resize the window";
+    char rule_line[100];
+
+
+     // print rules
+    while (Srow < txt_row || Scol < txt_col)
+    {
+        mvaddstr((Srow / 2), ((Scol - strlen(resisize_request)) / 2), resisize_request);
+        refresh();
+
+        getmaxyx(stdscr, Srow, Scol);
+    }
+
+    clear();
+    refresh();
+
+    int indx = 0;
+    int indx_offset = (Srow - txt_row) / 2; // da modificare se cambia il rule.txt
+    while ((fgets(rule_line, sizeof(rule_line), screen_img)) != NULL)
+    {
+        mvprintw(indx + indx_offset, (Scol - strlen(rule_line)) / 2, "%s", rule_line);
+        indx++;
+    }
+
+    refresh();
+    fclose(screen_img);
+
+    while ((start_char = getch()) != ' ')
+    {
+        //don't do anything
+    }
+
+    clear();
+    refresh();
 }
 
 void destroy_win(WINDOW *local_win)

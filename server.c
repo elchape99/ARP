@@ -33,8 +33,11 @@ void writeLog(const char *format, ...);
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
 // int sign(int x);
-
 WINDOW *create_new_window(int row, int col, int ystart, int xstart); // creazione delle finestre
+
+void print_screen(char *txt_path, int txt_row, int txt_col);
+
+void destroy_win(WINDOW *local_win);
 
 int signum(int x);
 
@@ -204,6 +207,7 @@ int main(int argc, char *argv[])
     WINDOW *spawn_window;
     // parte legata ad ncurses per il server
     int Srow, Scol; // righe e colonne massime dello schermo
+    int Srow_new, Scol_new;
     int rowSH, colSH;
     // initialization row
     initscr();
@@ -482,17 +486,50 @@ int main(int argc, char *argv[])
             wrefresh(spawn_window);
             if (counter == MAX_TARG_ARR_SIZE)
             {
-                // fare funzione vincita
+                print_screen("winScreen.txt", 6, 87);
+
+                //
+                exit(EXIT_SUCCESS);
+                // after closing win screen, the server will be closed 
             }
         }
         // gestione del resize della finestra
-        getmaxyx(stdscr, Srow, Scol);
+        getmaxyx(stdscr, Srow_new, Scol_new);
+        if (Srow_new != Srow || Scol_new != Scol)
+        {
+            // use the new dimension to create the new environment
+            Srow = Srow_new;
+            Scol = Scol_new;
 
-        spawn_Col = Scol - 2;
-        spawn_Row = Srow - 2;
+            // clear the screen
+            clear();
 
-        rowSH = spawn_Row / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
-        colSH = spawn_Col / 2;
+            spawn_Col = Scol - 2;
+            spawn_Row = Srow - 2;
+
+            rowSH = spawn_Row / 2; // definisco gli shift per traslare (0,0) al centro dello schermo
+            colSH = spawn_Col / 2;
+
+            // recreating the environment
+            box(stdscr, 0, 0);
+
+            // destroy the old window
+            destroy_win(spawn_window);
+
+            // spawn the new window in the new size
+            spawn_window = newwin(spawn_Row, spawn_Col, 1, 1);
+
+            // obtain the new position of the target
+            for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
+            {
+                int_set_of_target[i][0] = (int)(set_of_target[i][0] * spawn_Col);
+                int_set_of_target[i][1] = (int)(set_of_target[i][1] * spawn_Row);
+            }
+
+            // refresh the screen and the window
+            wrefresh(stdscr);
+            wrefresh(spawn_window); // ends up on top of the screen
+        }
 
     } // while(1) end --> if all the target are reached, we exit from this cycle
 
@@ -551,6 +588,54 @@ void writeLog(const char *format, ...)
     }
 }
 */
+
+void print_screen(char *txt_path, int txt_row, int txt_col){
+    FILE *screen_img = fopen(txt_path, "r");
+    if (screen_img == NULL)
+    {
+        printf("null file pointer\n");
+        fflush(stdout);
+    }
+
+    int Srow, Scol;
+    getmaxyx(stdscr, Srow, Scol);
+    char start_char = '?';
+    char resisize_request[] = "please resize the window";
+    char rule_line[100];
+
+
+     // print rules
+    while (Srow < txt_row || Scol < txt_col)
+    {
+        mvaddstr((Srow / 2), ((Scol - strlen(resisize_request)) / 2), resisize_request);
+        refresh();
+
+        getmaxyx(stdscr, Srow, Scol);
+    }
+
+    clear();
+    refresh();
+
+    int indx = 0;
+    int indx_offset = (Srow - txt_row) / 2; // da modificare se cambia il rule.txt
+    while ((fgets(rule_line, sizeof(rule_line), screen_img)) != NULL)
+    {
+        mvprintw(indx + indx_offset, (Scol - strlen(rule_line)) / 2, "%s", rule_line);
+        indx++;
+    }
+
+    refresh();
+    fclose(screen_img);
+
+    while ((start_char = getch()) != ' ')
+    {
+        //don't do anything
+    }
+
+    clear();
+    refresh();
+}
+
 void sigusr1Handler(int signum, siginfo_t *info, void *context)
 {
     if (signum == SIGUSR1)
@@ -580,4 +665,12 @@ WINDOW *create_new_window(int row, int col, int ystart, int xstart)
 
     wrefresh(local_window);
     return local_window;
+}
+
+void destroy_win(WINDOW *local_win)
+{
+    box(local_win, ' ', ' ');
+    wborder(local_win, ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    wrefresh(local_win);
+    delwin(local_win);
 }
