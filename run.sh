@@ -3,6 +3,7 @@
 # Crea la cartella build_process se non esiste
 mkdir -p bin
 mkdir -p lib
+mkdir -p log
 
 # Compila la libreria arplib
 gcc -c -o lib/arplib.o src/arplib.c
