@@ -19,6 +19,10 @@ you can use the command
 git checkout Ass2 
 ```
 to switch to the correct branch. In here you will find some folder that contain al the file needed to run the entire project.
+For run the project run the command 
+```
+./run.sh
+```
 
 ### Use of Simulator
 
