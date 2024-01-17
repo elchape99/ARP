@@ -204,6 +204,13 @@ int main(int argc, char *argv[])
     noecho();
     keypad(stdscr, TRUE);
 
+    // initialize color in the terminal
+    start_color();
+
+    // define the color pair
+    init_pair(1, COLOR_RED, COLOR_BLACK);
+    init_pair(2, COLOR_GREEN, COLOR_BLACK);
+
     box(stdscr, 0, 0);
     refresh();
 
@@ -444,15 +451,22 @@ int main(int argc, char *argv[])
             wclear(spawn_window);
 
             // print the drone icon
+            // activate attribute for printing
+            wattr_on(spawn_window, A_STANDOUT, NULL);
             mvwaddch(spawn_window, rowSH - int_dronePosition[1], colSH + int_dronePosition[0], DRONE_ICON);
+            // deactivate attribute for printing
+            wattr_off(spawn_window, A_STANDOUT, NULL);
 
             // print the obstacle
+            wattr_on(spawn_window, COLOR_PAIR(1), NULL);
             for (i = 0; i < MAX_OBST_ARR_SIZE; i++)
             {
                 mvwaddch(spawn_window, rowSH - int_set_of_obstacle[i][1], colSH + int_set_of_obstacle[i][0], 'O');
             }
+            wattr_off(spawn_window, COLOR_PAIR(1), NULL);
 
             // print the target
+            wattr_on(spawn_window, COLOR_PAIR(2), NULL);
             for (i = 0; i < MAX_TARG_ARR_SIZE; i++)
             {
                 if (int_set_of_target[i][0] != -1000 && int_set_of_target[i][1] != -1000)
@@ -470,6 +484,8 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+            wattr_off(spawn_window, COLOR_PAIR(2), NULL);
+            
             // refresch of the ncurses window
             wrefresh(spawn_window);
             if (counter == MAX_TARG_ARR_SIZE)
@@ -578,7 +594,8 @@ void print_screen(char *txt_path, int txt_row, int txt_col)
     char rule_line[100];
     // print rules
     while (Srow < txt_row || Scol < txt_col)
-    {
+    {   
+        clear();
         mvaddstr((Srow / 2), ((Scol - strlen(resisize_request)) / 2), resisize_request);
         refresh();
 
