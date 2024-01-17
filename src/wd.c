@@ -48,6 +48,7 @@ int main(int argc, char *argv[])
     {
         perror("wd: sigaction");
         writeLog("==> ERROR ==> wd: sigaction %m ");
+        exit(EXIT_FAILURE);
     }
     // exctract and convert the pid send from master, they are in position 1 => nm_ps +1
     for (i = 1; i < num_ps + 1; i++)
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
             /* send signal to all process*/
             if (kill(pids_from_process[i], SIGUSR1) != 0)
             {
-                writeLog("==> ERROR ==> wd: kill signal SIGUSR1 wd %m ");
+                writeLog("WARNING wd: kill signal SIGUSR1 wd %m ");
             }
             /* increment the counter when send the signal SIGUSR1*/
             counter++;
@@ -115,13 +116,6 @@ int main(int argc, char *argv[])
                     {
                         writeLog("==> ERROR ==> wd: kill signal SIGKILL wd %m ");
                     }
-                    /*
-                    if (exit(0) == -1){
-                        perror("WD: exit() ");
-                        writeLog("==> ERROR ==> wd:  ");
-     
-                    }*/
-                    
                 }
                 return 0;
             }

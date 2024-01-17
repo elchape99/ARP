@@ -389,7 +389,7 @@ int main(int argc, char *argv[])
             // case when the drone is in the nearest circle around the obstacle, assign a default force
             {
                 // case when the drone is too near the obstacle
-                obstForce[0] = obstForce[0] + (sign(distance[0]) * 6); //(K_CLOSE * abs(inputForce[0])));
+                obstForce[0] = obstForce[0] + (sign(distance[0]) * 7); //(K_CLOSE * abs(inputForce[0])));
             }
             else
             {
@@ -408,7 +408,7 @@ int main(int argc, char *argv[])
             else if (abs(distance[1]) < OBST_RADIUS_CLOSE)
             {
                 // rone to near to the obstacle,risk an overflow, so limit the distance
-                obstForce[1] = obstForce[1] + (sign(distance[1]) * 6); //(K_CLOSE * abs(inputForce[1])));
+                obstForce[1] = obstForce[1] + (sign(distance[1]) * 7); //(K_CLOSE * abs(inputForce[1])));
             }
             else
             {
@@ -427,11 +427,11 @@ int main(int argc, char *argv[])
         // control that the drone is not outside the upper and lower edge of window
         if (abs(rowSH - int_dronePosition[1]) == 0)
         {
-            totalForce[1] = -30;
+            totalForce[1] = -50;
         }
         else if ((rowSH - int_dronePosition[1]) == spawn_Row)
         {
-            totalForce[1] = +30;
+            totalForce[1] = +40;
         }
         // control thet the drone is inide the right and left edge of the window
         if ((colSH + int_dronePosition[0]) == 0)

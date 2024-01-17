@@ -17,8 +17,6 @@
 #include "arplib.h"
 #include "../config/config.h"
 
-#define WIND_NUMBER 12
-
 // signals handler functions
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
