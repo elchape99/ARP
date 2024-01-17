@@ -17,6 +17,8 @@
 #include "arplib.h"
 #include "../config/config.h"
 
+#define WIND_NUMBER 12
+
 // signals handler functions
 void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
@@ -103,10 +105,6 @@ int main(int argc, char *argv[])
 
     char input_char = '?'; // definisco la variabile di input
 
-    char start_char = '?';
-    char resisize_request[] = "please resize the window";
-    char rule_line[100];
-
     // definizione delle variabili di ncurses ------
     int Srow, Scol, SrowNew, ScolNew;
 
@@ -126,6 +124,7 @@ int main(int argc, char *argv[])
     WINDOW *down_left_butt;
     WINDOW *down_right_butt;
 
+    // definizione delle variabili di ncurses ------ 3    4    5    6    7    8    9    10   11   
     char icon_string[WIND_NUMBER] = {'-', '-', 'Q', 'W', 'E', 'R', 'S', 'D', 'F', 'X', 'C', 'V'};
 
     int *active_power = (int *)malloc(WIND_NUMBER * sizeof(int));
@@ -270,6 +269,7 @@ void print_screen(char *txt_path, int txt_row, int txt_col)
     // print rules
     while (Srow < txt_row || Scol < txt_col)
     {
+        clear();
         mvaddstr((Srow / 2), ((Scol - strlen(resisize_request)) / 2), resisize_request);
         refresh();
 
@@ -472,8 +472,16 @@ int *manage_input(char input_char, char *icon_string, int *active_power, double 
             active_power[2] = -1;
             active_power[7] = -1;
 
+            /*
+            // definizione delle variabili di ncurses ------ 3    4    5    6    7    8    9    10   11   
+            char icon_string[WIND_NUMBER] = {'-', '-', 'Q', 'W', 'E', 'R', 'S', 'D', 'F', 'X', 'C', 'V'};
+            */
+
+            // resulting power on the y direction
             resulting_power[1] = active_power[4] - active_power[10] + active_power[3] / 2.0 + active_power[5] / 2.0 - active_power[9] / 2.0 - active_power[11] / 2.0;
-            resulting_power[0] = active_power[8] - active_power[6] + active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 - active_power[11] / 2.0;
+
+            // resulting power on the x direction
+            resulting_power[0] = active_power[8] - active_power[6] - active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 + active_power[11] / 2.0;
         }
         else
         {
@@ -483,9 +491,11 @@ int *manage_input(char input_char, char *icon_string, int *active_power, double 
             {
                 active_power[pointer_index] -= 1;
             }
-
+            // resulting power on the y direction
             resulting_power[1] = active_power[4] - active_power[10] + active_power[3] / 2.0 + active_power[5] / 2.0 - active_power[9] / 2.0 - active_power[11] / 2.0;
-            resulting_power[0] = active_power[8] - active_power[6] + active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 - active_power[11] / 2.0;
+
+            // resulting power on the x direction
+            resulting_power[0] = active_power[8] - active_power[6] - active_power[3] / 2.0 - active_power[9] / 2.0 + active_power[5] / 2.0 + active_power[11] / 2.0;
         }
     }
 
