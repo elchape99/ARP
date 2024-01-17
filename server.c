@@ -27,58 +27,14 @@
 // constant for the computation of the force
 #define K_CLOSE 3
 #define K_STD 0.5
-
-/* function for write in logfile*/
-void writeLog(const char *format, ...)
-{
-
-    FILE *logfile = fopen("logfile.txt", "a");
-    if (logfile == NULL)
-    {
-        perror("server: error opening logfile");
-        exit(EXIT_FAILURE);
-    }
-    va_list args;
-    va_start(args, format);
-
-    time_t current_time;
-    time(&current_time);
-
-    fprintf(logfile, "%s => ", ctime(&current_time));
-    vfprintf(logfile, format, args);
-
-    va_end(args);
-    fflush(logfile);
-    if (fclose(logfile) == -1)
-    {
-        perror("fclose logfile");
-        writeLog("ERROR ==> server: fclose logfile");
-    }
-}
+//
+void writeLog(const char *format, ...);
 // Inserire perror nella kill
-void sigusr1Handler(int signum, siginfo_t *info, void *context)
-{
-    if (signum == SIGUSR1)
-    {
-        /*send a signal SIGUSR2 to watchdog */
-        kill(info->si_pid, SIGUSR2);
-        writeLog("SERVER, pid %d, received signal from wd pid: %d ", getpid(), info->si_pid);
-    }
-}
+void sigusr1Handler(int signum, siginfo_t *info, void *context);
 
-int sign(int x)
-{
-    if (x < 0)
-        return -1;
-    else if (x > 0)
-        return 1;
-    else
-        return 1;
-}
+// int sign(int x);
 
 WINDOW *create_new_window(int row, int col, int ystart, int xstart); // creazione delle finestre
-
-bool spawn_autorization(int obst_x, int obst_y, int drone_x, int drone_y);
 
 int signum(int x);
 
@@ -214,7 +170,6 @@ int main(int argc, char *argv[])
 
     // variable for the computation of the forces
     double obstForce[2] = {0.0};
-    double targetForce[2] = {0.0};
     double totalForce[2] = {0.0};
 
     // variabili per il calcolo delle forze
@@ -406,18 +361,19 @@ int main(int argc, char *argv[])
 
             if (abs(distance[0]) > OBST_RADIUS_FAR || abs(distance[1]) > OBST_RADIUS_FAR)
             {
-                // case when the drone is too far from obstacel
+                // case when the drone is too far from obstacel, don't add any repulsive force
                 obstForce[0] = obstForce[0] + 0; // don't add any force
                 obstForce[1] = obstForce[1] + 0; // don't add any force
             }
-            else if (abs(distance[0]) < OBST_RADIUS_FAR)
+            else if (abs(distance[0]) < OBST_RADIUS_CLOSE)
+            // case when the drone is in the nearest circle around the obstacle, assign a default force
             {
                 // case when the drone is too near the obstacle
-                obstForce[0] = obstForce[0] + (sign(distance[0]) * (K_CLOSE * abs(inputForce[0])));
+                obstForce[0] = obstForce[0] + (sign(distance[0]) * 6); //(K_CLOSE * abs(inputForce[0])));
             }
             else
             {
-                // other case when the drone is arriving near the obstacle
+                // general case when the drone is OBST_RADIUS_CLOSE < drone < OBST_RADIUS_FAR
                 obstForce[0] = obstForce[0] + (sign(distance[0]) * ((K_STD * abs(inputForce[0])) / pow(distance[0], 2)));
             }
 
@@ -432,19 +388,17 @@ int main(int argc, char *argv[])
             else if (abs(distance[1]) < OBST_RADIUS_CLOSE)
             {
                 // rone to near to the obstacle,risk an overflow, so limit the distance
-                obstForce[1] = obstForce[1] + (sign(distance[1]) * (K_CLOSE * abs(inputForce[1])));
+                obstForce[1] = obstForce[1] + (sign(distance[1]) * 6); //(K_CLOSE * abs(inputForce[1])));
             }
             else
             {
-                // all the other case
+                // general case when the drone is OBST_RADIUS_CLOSE < drone < OBST_RADIUS_FAR
                 obstForce[1] = obstForce[1] + (sign(distance[1]) * ((K_STD * abs(inputForce[1])) / pow((distance[1]), 2)));
             }
 
-            writeLog("server: DIST\tx = %d, y = %d, ---  DRONE (%d, %d), OBST (%d, %d), F.INPUT (%lf, %lf), F.OBST (%lf, %lf), F.TOT (%lf,%lf)", distance[0], distance[1], int_dronePosition[0], int_dronePosition[1], int_set_of_obstacle[i][0], int_set_of_obstacle[i][1], inputForce[0], inputForce[1], obstForce[0], obstForce[1], totalForce[0], totalForce[1]);
-            // writeLog("server obstForce-iesima  \t x = %lf, y = %lf", obstForce[0], obstForce[1]);
+            // writeLog("server: DIST\tx = %d, y = %d, ---  DRONE (%d, %d), OBST (%d, %d), F.INPUT (%lf, %lf), F.OBST (%lf, %lf), F.TOT (%lf,%lf)", distance[0], distance[1], int_dronePosition[0], int_dronePosition[1], int_set_of_obstacle[i][0], int_set_of_obstacle[i][1], inputForce[0], inputForce[1], obstForce[0], obstForce[1], totalForce[0], totalForce[1]);
+            //  writeLog("server obstForce-iesima  \t x = %lf, y = %lf", obstForce[0], obstForce[1]);
         }
-
-        //
 
         // compute the total force as sum of all the force on the arena
         totalForce[0] = inputForce[0] + obstForce[0];
@@ -478,6 +432,7 @@ int main(int argc, char *argv[])
         }
         else
         {
+            // write the total force to drone
             if (write(fds_d[1], totalForce, sizeof(double) * 2) == -1)
             {
                 perror("server: write fds_d[1]");
@@ -485,7 +440,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                // writeLog("server total force \tx = %lf, y = %lf", totalForce[0], totalForce[1]);
+                writeLog("server total force \tx = %lf, y = %lf", totalForce[0], totalForce[1]);
                 // writeLog("server inputForce\t x = %lf, y = %lf", inputForce[0], inputForce[1]);
                 // writeLog("server obstForce\t x = %lf, y = %lf", obstForce[0], obstForce[1]);
             }
@@ -510,12 +465,12 @@ int main(int argc, char *argv[])
             {
                 if (int_set_of_target[i][0] != -1000 && int_set_of_target[i][1] != -1000)
                 {
-                    if (abs(int_dronePosition[0] - int_set_of_target[i][0]) == 1 && abs(int_dronePosition[1] - int_set_of_target[i][1]) == 1 )
+                    if (abs(int_dronePosition[0] - int_set_of_target[i][0]) <= 1 && abs(int_dronePosition[1] - int_set_of_target[i][1]) <= 1)
                     {
                         // set the value to -1, aka target reached
                         int_set_of_target[i][0] = -1000;
                         int_set_of_target[i][1] = -1000;
-                        counter ++;
+                        counter++;
                     }
                     else
                     {
@@ -525,7 +480,8 @@ int main(int argc, char *argv[])
             }
             // refresch of the ncurses window
             wrefresh(spawn_window);
-            if(counter == MAX_TARG_ARR_SIZE){
+            if (counter == MAX_TARG_ARR_SIZE)
+            {
                 // fare funzione vincita
             }
         }
@@ -566,30 +522,62 @@ int main(int argc, char *argv[])
 }
 
 //// ---- Functions sections -----------------------------------------------------------
+/* function for write in logfile*/
+/*
+void writeLog(const char *format, ...)
+{
+
+    FILE *logfile = fopen("logfile.txt", "a");
+    if (logfile == NULL)
+    {
+        perror("server: error opening logfile");
+        exit(EXIT_FAILURE);
+    }
+    va_list args;
+    va_start(args, format);
+
+    time_t current_time;
+    time(&current_time);
+
+    fprintf(logfile, "%s => ", ctime(&current_time));
+    vfprintf(logfile, format, args);
+
+    va_end(args);
+    fflush(logfile);
+    if (fclose(logfile) == -1)
+    {
+        perror("fclose logfile");
+        writeLog("ERROR ==> server: fclose logfile");
+    }
+}
+*/
+void sigusr1Handler(int signum, siginfo_t *info, void *context)
+{
+    if (signum == SIGUSR1)
+    {
+        // send a signal SIGUSR2 to watchdog
+        kill(info->si_pid, SIGUSR2);
+        writeLog("SERVER, pid %d, received signal from wd pid: %d ", getpid(), info->si_pid);
+    }
+}
+/*
+int sign(int x)
+{
+    if (x < 0)
+        return -1;
+    else if (x > 0)
+        return 1;
+    else
+        return 1;
+}
+*/
+
 WINDOW *create_new_window(int row, int col, int ystart, int xstart)
+
 {
     WINDOW *local_window = newwin(row, col, ystart, xstart);
     box(local_window, 0, 0);
 
     wrefresh(local_window);
     return local_window;
-}
-
-bool spawn_autorization(int obst_x, int obst_y, int drone_x, int drone_y)
-{
-    // return true whe I can spawn the obstacle
-    double trsh = 2.0;
-    // compute distance between obstacle and drone
-    double mod = sqrt((obst_x - drone_x) ^ 2 + (obst_y - drone_y) ^ 2);
-    // if distance is less than a threshold, I return false, so the obstacle is too near to drone
-    if (mod < trsh)
-    {
-        return false;
-    }
-    else
-    {
-        return true;
-    }
-    // the obstacle is enough far, so spawn it
-    return true;
 }

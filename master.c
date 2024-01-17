@@ -16,8 +16,8 @@
 #include "arplib.h"
 
 #define PROCESS_NUMBER 5;
-
-/* Function for write into logfile */
+/*
+//Function for write into logfile 
 void writeLog(const char *format, ...)
 {
 
@@ -41,18 +41,16 @@ void writeLog(const char *format, ...)
     if (fclose(logfile) < 0)
     {
         perror("master: fclose logfile");
+        exit(EXIT_FAILURE);
     }
 }
-
-/*This function do an exec in child process*/
+//This function do an exec in child process
 int spawn(const char *program, char **arg_list)
 {
-
     pid_t child_pid = fork();
     if (child_pid != 0)
         // main process
         return child_pid;
-
     else
     {
         // child process
@@ -64,7 +62,7 @@ int spawn(const char *program, char **arg_list)
         }
     }
 }
-
+*/
 int main()
 {
     /* The master spawn all the process  in oreder server, input, drone, target, obstacle, with watchdog at the end

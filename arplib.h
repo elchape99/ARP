@@ -5,7 +5,15 @@
 
 // Headers of functions
 
+int spawn(const char *program, char **arg_list);
+
 void writeLog(const char *format, ...);
+
+int sign(int x);
+
+
+
+
 
 
 
