@@ -1,4 +1,4 @@
-# First assignment  
+# Second assignment  
 
 Project of Andrea Chiappe s4673275, Simone Lombardi s6119159
 
@@ -8,19 +8,21 @@ The drone has 8 degreeds of freedom in the plane, it could move up, down, right,
 When the simlator is open, you will see two windows, one with the drone and the other with the keys on keyboard is possible to push.
 Every keys correspond to a force apply at the drone. It will be expleined after.
 
-### Instalation
+### Installation
 
-For run the simulaton, you need to have in the same folder the file: master.c, server.c, drone.c, input.c and gccfile.sh.
-Then in the termnal run:
-<center>
-run ./gccfile.sh
-</center>
-
-The `gccfile.sh` script will create a new folder named "build_process" containing the executable file, the logfile with information about the process and their state, any errors, and all the system information.
+After downloading the repo with the command:
+```
+git clone https://github.com/elchape99/ARP.git
+```
+you can use the command
+```
+git checkout Ass2 
+```
+to switch to the correct branch. In here you will find some folder that contain al the file needed to run the entire project.
 
 ### Use of Simulator
 
-You can interact with the simulator by typing 8 different keys: D, S, F, E, C, W, R, X, V. If you push one of these keys, the drone will move in one of the allowable directions corresponding to the pushed key. The idea is that when you push one of these keys, a step of force is applied to the drone, allowing it to move in the desired direction. Pushing the same key multiple times increases the force and, consequently, the speed. Each time you push the same key, the force increases by one step. To stop the drone, you can push the D key to remove all the force, or type the opposite keys compared to the drone's directions. When different keys are pushed, the drone moves in the resultant direction, which is the sum of all the applied forces.
+You can interact with the simulator by typing 8 different keys: D, S, F, E, C, W, R, X, V, (be sure you are typing the input in the "input" terminal). If you push one of these keys, the drone will move in one of the allowable directions corresponding to the pushed key. The idea is that when you push one of these keys, a step of force is applied to the drone, allowing it to move in the desired direction. Pushing the same key multiple times increases the force and, consequently, the speed. Each time you push the same key, the force increases by one step. To stop the drone, you can push the D key to remove all the force, or type the opposite keys compared to the drone's directions. When different keys are pushed, the drone moves in the resultant direction, which is the sum of all the applied forces.
 
 The keys you can push are:
 - **D:** Decrease one step of all the forces in the game
@@ -37,19 +39,105 @@ The keys you can push are:
  
 ### Project Structure
 
-The simulator, written in POSIX standard, consists of 5 processes working concurrently: `master.c`, `server.c`, `drone.c`, `input.c`, and `wd.c`.
+The simulator, written in POSIX standard, consists of 5 processes working concurrently: `master.c`, `server.c`, `drone.c`, `input.c`, `obstacle.c`, `targhet.c`, and `wd.c`.
 
-- **`master.c`:** Creates all processes using fork/exec* sys calls. It creates the server and input processes for a graphical interface. This process also creates the necessary pipes for communication between processes. One pipe is for communication between drone-input to transfer pushed keys, and others allow communication between every process with the watchdog to send its own process_id. This process waits for the end of the execution of all created processes.
+- **`master.c`:** Creates all processes using fork/exec* sys calls. It creates the server and input processes for a graphical interface. This process also creates the necessary pipes for communication between processes. All the communication is done using pipes, the initialization pipes characterized by a numeric index fd_<progessive_number> are used to ensure that the Watchdog process is in possession of the correct pid of each process. Exception made for the WD before starting the normal execution each process sends it's pid back to the master process, and using the environment variable argc and argv the WD is able to recive all the correct pid.
 
-- **`input.c`:** Captures pushed keyboard keys and sends them to the drone process through a pipe. It uses the ncurses library to print and higlight the button and is executed in master with konsole, so the input window with pushed keys is displayed when the game opens. 
+  The primitives used by the master are:
+  - fork() : creating new process
+  - execvp() : using a process to launch an executable
+  - pipe() : creating a pipe
+  - close() : safely closing an unused file descriptor
+  - fopen() : opening the log file
+  - waitpid() : halting execution to recive status from a particular process
+  
 
-- **`drone.c`:** Computes the position, velocity, and dynamics of the drone and sends the data to the server through a shared memory segment controlled by two. The process uses the select syscall to periodically check the pipe arriving from the input process, if the pipe is ready the new input is converted in the corresponding force and applied to the drone. 
+- **`input.c`:** Using the ncurses library the input process is able to manage the input created by the user and sends the result to the server process. The input is generated in char, the process manages the input to create a vector of double which represents the resultant force on the X and Y axes of the environment. After computing those values the process uses a pipe to send the information to the server, after this the process uses the input and the ncurses library to adequately inform the user of the situation.
+ 
+  The primitives used by the input are:
+  - pipe() : creating a pipe
+  - fopen() : opening the log file
+  - write() : sending data on a pipe
+  - sigaction() : dealing with signals
+  - kill() : send signals to the WD
+  
 
-- **`server.c`:** Prints the position of the drone on the terminal using the ncurses library. Manages shared memory for communication with the drone. After reciveing the data (posiiton) from the drone process prints the drone in the position recived. There is a control to prevent the server process to print the drone icon if the position has not changed from the previous one. 
+- **`drone.c`:** This process is used to compute the dynamics of the drone, we used two pipe to implement a double direction communication with the server process. The drone uses a pipe controlled by a select to retrive the information about the total force that is applied to the drone in a particular moment, than using the formulas:
+
+```math
+V(t+dt) = V(t) + dt ( F + k V(t))
+```
+where
++ $V(t+dt)$ : Velocity of the drone in the next time istant
++ $V(t)$ : Actual drone velocity
++ $dt$ : delta time 
++ $F$ : resultant of all the external forces acting on the drone
++ $k$ : viscous friction coefficient
+and
+```math
+P(t+dt) = P(dt) + dt V(t+dt)
+```
+where
++ $P(t+dt) : Position of the drone in the next time istant
++ $P(t) : Actual drone position
+
+We were able to simulate the motion of the drone in the environment
+
+The primitives used by the drone are:
+  - fopen() : opening the log file
+  - write() : sending data on a pipe
+  - read() : readind data from a pipe
+  - sigaction() : dealing with signals
+  - select() : avoiding the blocking effect of the read() on the pipe
+  - kill() : send signals to the WD
+
+- **`obstacle.c`:** The obstacle process is in charge of generating the obstacle on a timer, we opted to simplify the communication needed by generating the random position as a double value between -0.5 and +0.5, by doing so we avoid the necessity to send the dimension of the map to the process every time it changes. The process uses a pipe to send an array of float value to the server.
+  The primitives used by the obstacle are:
+  - fopen() : opening the log file
+  - write() : sending data on a pipe
+  - sigaction() : dealing with signals
+  - kill() : send signals to the WD
+
+- **`target.c`:** The generation of the target follows the same logic of the obstacle, but, instead of generating the targhet on a timer the process generates one set of target for each game played.
+  
+   The primitives used by the targhet are:
+  - fopen() : opening the log file
+  - write() : sending data on a pipe
+  - sigaction() : dealing with signals
+  - kill() : send signals to the WD
+  
+- **`server.c`:** The server process is in charge of printing the map to the terminal and computing the repulsive force of the obstacle and limit of the work environment.
+ The force of the obstacle are computed in the following way, depending on the distance from the drone:(to simplify the comparison the distance considered are all int values)
+if the distance is higher of a constant R
+```math
+F_{obst} = 0 N
+```
+else if the distance is in between of r and R
+```math
+F_{obst} = (K |F_{inp}|) / (d)^2
+```
+where
++ $K$ : linear gain
++ $|F_{inp}|$ : valore assoluto della risultante delle forze in input
++ $d$ : distance of the drone from the obstacle
+
+else if the distance is lower than r
+```math
+F_{obst} = K
+```
+this is done to avoid the $F_{obst}$ tend towards infinity as the distance from the obstacle goes to zero
+
+The primitives used by the server are:
+  - fopen() : opening the log file
+  - write() : sending data on a pipe
+  - sigaction() : dealing with signals
+  - kill() : send signals to the WD
+
 
 - **`wd.c`:** Checks if all processes are running correctly. The watchdog works with signals, sending a signal to a different process every second. The process that receives the signal sends another signal back to the watchdog to inform that it is working. If the watchdog receives the signal back, everything is okay; otherwise, it means that the process wasn't working correctly, and it kills all the processes. At the start, the watchdog reads process ids from the pipes because opening them with konsole, the pid is not the same as returned from exec in the master process.
 
-![sketch of the project](progetto_arp.jpg)
+### Project architecture
+![arp_proj_arch](https://github.com/elchape99/ARP/assets/146358714/a77b7357-1f4a-4607-88f0-89daebd8d8d1)
 
 ### Example of use 
 
@@ -57,7 +145,6 @@ A simple example of the use of the simulator is, for example: If I push the F ke
 - Push the D key, which reset all the forces in the game. The drone will stop as an effect of the drag in the simulation.
 - Push the S key, to increase the force in the opposite direction, pushing S the same number of times of F will have the same effect of pressing D, but if you press S one more time the drone will stop than procede in the S direction with force of "one".
 
-In this assignment, the boundaries of the window are not delimited, so the drone could go outside the window, becoming invisible.
 
 
 
