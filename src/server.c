@@ -463,7 +463,9 @@ int main(int argc, char *argv[])
                 exit(EXIT_FAILURE);
             }
         }
-        ///// ncurses part forupdate teh drone and obstacle position
+        //////////////////////////////////////////////////////////////////////////
+        //               SCREEN UPDATING SECTION                                //
+        //////////////////////////////////////////////////////////////////////////
         if (new_obstacles == 1 || new_position == 1)
         {
             // clear the map window
