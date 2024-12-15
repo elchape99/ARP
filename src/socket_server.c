@@ -25,7 +25,7 @@
 #define h_addr h_addr_list[0] /* for backward compatibility */
 // the variable h_addr is the first address in the list h_addr_list
 
-void client_handling_function(int pipe_fd, int port_no, char *ip_address);
+void client_handling_function(int pipe_fd, int PORT_NUMBER, char *ip_address);
 
 void server_handling_function(int new_sockfd);
 
@@ -119,8 +119,8 @@ int main(int argc, char *argv[])
     // socket server activation
     // parent process handles the SERVER side ---> solo se getpid() == father_pid
     // variabili gestione socket
-    int sock_fd, newsock_fd, port_no, cli_len, ret_n;
-    char string_port_no[100], correct_str_port_no[100];
+    int sock_fd, newsock_fd, PORT_NUMBER, cli_len, ret_n;
+    char string_PORT_NUMBER[100], correct_str_PORT_NUMBER[100];
     char socket_info[100];
     char string_ip[INET_ADDRSTRLEN];
 
@@ -134,21 +134,18 @@ int main(int argc, char *argv[])
     // set the socket struct to zero
     bzero((char *)&serv_addr, sizeof(serv_addr));
 
-    // set the port number
-    port_no = 49152;
-
     // set the socket struct
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
-    serv_addr.sin_port = htons(port_no);
+    serv_addr.sin_port = htons(PORT_NUMBER);
 
     // bind the tocket
     while ((ret_n = bind(sock_fd, (SA *)&serv_addr, sizeof(serv_addr))) < 0)
     {
         error("socket_server: error on binding");
 
-        port_no = port_no + 1;
-        serv_addr.sin_port = htons(port_no);
+        PORT_NUMBER = PORT_NUMBER + 1;
+        serv_addr.sin_port = htons(PORT_NUMBER);
     }
 
     inet_ntop(AF_INET, &(serv_addr.sin_addr), string_ip, INET_ADDRSTRLEN);
@@ -179,7 +176,7 @@ int main(int argc, char *argv[])
 
     pclose(fp);
 
-    printf("selected port no: %d", port_no);
+    printf("selected port no: %d", PORT_NUMBER);
 
     printf("controllo\n");
 
@@ -191,25 +188,25 @@ int main(int argc, char *argv[])
 
 
     int retVall;
-    retVall = string_parser(socket_info, string_ip, string_port_no);
+    retVall = string_parser(socket_info, string_ip, string_PORT_NUMBER);
 
     for (i = 0; i < 5; i++){
-        correct_str_port_no[i] = string_port_no[i];
+        correct_str_PORT_NUMBER[i] = string_PORT_NUMBER[i];
     }
 
     printf("valore retVall: %d\n", retVall);
     fflush(stdout);
 
-    printf("valori delle stringhe: %s, %s, %s\n", string_ip, string_port_no, socket_info);
+    printf("valori delle stringhe: %s, %s, %s\n", string_ip, string_PORT_NUMBER, socket_info);
     fflush(stdout);
 
-    printf("correct string port no: %s\n", correct_str_port_no);
+    printf("correct string port no: %s\n", correct_str_PORT_NUMBER);
     fflush(stdout);
 
-    memset(string_port_no, '\0', sizeof(string_port_no));
-    strcpy(string_port_no, correct_str_port_no);
+    memset(string_PORT_NUMBER, '\0', sizeof(string_PORT_NUMBER));
+    strcpy(string_PORT_NUMBER, correct_str_PORT_NUMBER);
 
-    printf("corrected str port no: %s\n", string_port_no);
+    printf("corrected str port no: %s\n", string_PORT_NUMBER);
     fflush(stdout);
     
     
@@ -412,14 +409,14 @@ int main(int argc, char *argv[])
         {
             // server child process
             sleep(3);
-            client_handling_function(fd7[1], atoi(string_port_no), string_ip);
+            client_handling_function(fd7[1], atoi(string_PORT_NUMBER), string_ip);
             
         }
         if (obstacle_client_pid == 0)
         {
             // client child process
             sleep(3);
-            client_handling_function(fd7[1], atoi(string_port_no), string_ip);
+            client_handling_function(fd7[1], atoi(string_PORT_NUMBER), string_ip);
         }
 
         
@@ -428,13 +425,13 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void client_handling_function(int pipe_fd, int port_no, char *ip_address)
+void client_handling_function(int pipe_fd, int PORT_NUMBER, char *ip_address)
 {
     // variabili gestione socket
     printf("attivato client: %d\n", getpid());
     fflush(stdout);
 
-    int sock_fd, port_no_cli;
+    int sock_fd, PORT_NUMBER_cli;
     int retR_n, retW_n, ret_n;
     int buffer_send;
 
@@ -465,7 +462,7 @@ void client_handling_function(int pipe_fd, int port_no, char *ip_address)
     bcopy((char *)server->h_addr, (char *)&server_addres.sin_addr.s_addr, server->h_length);
     // used to copy server->h_lenght byte from string arg1 to string arg2
 
-    server_addres.sin_port = htons(port_no_cli);
+    server_addres.sin_port = htons(PORT_NUMBER_cli);
 
     // start communication with the server
     if ((ret_n = connect(sock_fd, (SA *)&server_addres, sizeof(server_addres))) < 0)

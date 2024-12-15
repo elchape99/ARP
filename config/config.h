@@ -5,6 +5,9 @@
 //----- def for mster -----//
 #define PROCESS_NUMBER 6;
 
+//----- def for socket_server ----//
+#define PORT_NUMBER 50000
+
 //----- def for server -----//
 #define DRONE_ICON 'X'
 #define MAX_OBST_ARR_SIZE 20 // parameter also for for obstacle process
