@@ -16,6 +16,20 @@ After downloading the repo with the command:
 git clone https://github.com/SimoneLombardi/ARP_3.git
 ```
 
+### Starting game
+when game will start you will visualize three windoows, please focalize the one with the games rules, in case the windows are too small, please resize them, if not you are unable to see the all contents. 
+#### Single player mode
+After for play single palyer mode digit:
+
+```
+localhost 50000
+```
+where local hos tis the ip ok the pc
+and 50000 is the port where our socket server is listening.
+After this orpation the windows disapears and you can start playing with the game
+#### Multiplayer mode
+section to implement
+
 ### Folder Structure
 
 The downloaded folder is composed bu 5 folder inside: `bin`, `config`, `lib`, `log`, `src`, a file run.sh and a file README.md.
